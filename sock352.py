@@ -77,8 +77,8 @@ class socket:
 		self.s_addr = None
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
-		
-		return
+		sock.settimeout(0.2)
+		return sock
 
 	def bind(self,address):
 		myhost, placeholder_port = address
@@ -95,7 +95,16 @@ class socket:
 		sock.bind(self.c_addr) 
 		P = Packet()
 		syn_pack = P.header
-		sock.sendto(syn_pack, self.s_addr)
+		
+		Acked = False
+		while not Acked:
+			sock.sendto(syn_pack, self.s_addr)
+			try:
+				ack, serveraddr = sock.recvfrom(40)
+				print(ack)
+				Acked = True
+			except syssock.timeout:
+				print "Socket timeout"
 		return 
 
 	def listen(self,backlog):
