@@ -1,5 +1,6 @@
 import binascii
 import socket as syssock
+#import yoursocket # drops packets
 import struct
 import sys
 from numpy import random
@@ -61,10 +62,9 @@ class Packet:
 		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
-	global sock
+	#global sock
 	global txport
-	global rxport
-	sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)	
+	global rxport	
 	if (UDPportTx == ''):
 		txport = int(UDPportRx)	
 	if (UDPportRx == 0):
@@ -78,68 +78,92 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
 
 class socket:
 	def __init__(self):  # fill in your code here
+		# create socket
 		self.c_addr = None
 		self.s_addr = None
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
+		self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
 		#sock.settimeout(5)
 
 	def bind(self,address):
+		# bind to a port
 		myhost, placeholder_port = address
 		self.s_addr = (myhost, rxport)
 		self.c_addr = ('', txport)
 		self.isserver = True
-		sock.bind(self.s_addr)
+		self.sock.bind(self.s_addr)
 		return 
 
 	def connect(self,address):  # fill in your code here
+		# create conn from client perspective
 		servhost, placeholder_port = address
 		self.c_addr = ('', rxport)
 		self.s_addr = (servhost, txport)
 		self.isserver = False
-		sock.bind(self.c_addr) 
+		self.sock.bind(self.c_addr) 
 		P = Packet()
 		SYN = P.pack_header()
+		print("Seq # is:", P.sequence_no)
 		
 		Acked = False
 		while not Acked:
-			sock.sendto(SYN, (servhost,txport))
+			self.sock.sendto(SYN, self.s_addr)
 			try:
-				ack, serveraddr = sock.recvfrom(40)
-				print(ack)
+				ack, serveraddr = self.sock.recvfrom(40)
+				print('test',ack)
 				Acked = True
 			except syssock.timeout:
 				print ("Socket timeout")
 		return 
 
 	def listen(self,backlog):
+		# do nothing
+		# find size of socket array
 		return
 
 	def accept(self):
+		# 
 		P = Packet()
-		syn_buffer = sock.recv(P.header_len) # wait for SYN segment
+		syn_buffer = self.sock.recv(P.header_len) # wait for SYN segment
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
 		# Check SYN bit of packet
 		if(header[1]==0x1):
 			print ("SYN Segment Successfully Received" )
 			# SYN bit success, send SYNACK segment
 			P.ack_no = header[8] + 1
+			print("Client seq no is: ", header[8])
 			P.sequence_no = random.randint(0xFFFFFFFF)
 			SYNACK = P.pack_header()
-			sock.sendto(SYNACK, self.c_addr)
+			self.sock.sendto(SYNACK, self.c_addr)
 		# Error, SYN bit not set to 1
 		else:
 			print ("Error: SYN Segment Failed")
+		## opt 1:
+		#clientsocket = self 
+		## opt2:
+		#clientsocket = self.socket[0]
 		return (clientsocket,address)
 
 	def close(self):   # fill in your code here 
+		# close conn if last packet recv, ELSE close vars
 		return 
 
 	def send(self,buffer):
+		'''def recvthread:
+			while acks left:
+				recv acks
+				mark messages acked	'''
+		# must do go back N
+		# send length of file
 		bytessent = 0     # fill in your code here
 		return bytessent 
 
 	def recv(self,nbytes):
+		# only accept expected packets
+		# send acks
+		# return # of bytes received
+		# reassemble packets
 		bytesreceived = 0     # fill in your code 
 		return bytesreceived 
 
