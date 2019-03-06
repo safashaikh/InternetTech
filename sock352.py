@@ -9,6 +9,12 @@ import signal
 # define the UDP ports all messages are sent
 # and received from
 
+SOCK352_SYN = 0x01 
+SOCK352_FIN = 0x02 
+SOCK352_ACK = 0x04 
+SOCK352_RESET = 0x08 
+SOCK352_HAS_OPT = 0xA0
+
 class Packet:
 	def __init__(self):
 		'''
@@ -24,7 +30,7 @@ class Packet:
 		self.opt_ptr = 0		# 1 byte
 		self.protocol = 0		# 1 byte
 		if self.opt_ptr == 0:
-			self.header_len = 40	# 2 bytes
+			self.header_len = struct.calcsize('!BBBBHHLLQQLL')	# 2 bytes
 		else:
 			self.header_len = 0
 		self.checksum = 0		# 2 bytes
@@ -42,12 +48,18 @@ class Packet:
 			self.protocol, self.header_len, self.checksum, 
 			self.source_port, self.dest_port, self.sequence_no, 
 			self.ack_no, self.window, self.payload_len)
+			
+		def set_header_len(self,num):
+			self.header_len = num
+		
+		def set_payload_len(self,num):
+			self.payload_len = num
+		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
-	global sock
+	global sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #create UDP socket
 	global txport
-	global rxport
-	sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #create UDP socket	
+	global rxport	
 	if (UDPportTx == ''):
 		txport = int(UDPportRx)	
 	if (UDPportRx == 0):
@@ -61,20 +73,29 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
 
 class socket:
 	def __init__(self):  # fill in your code here
-		self.addr = None
+		self.c_addr = None
+		self.s_addr = None
 		self.isserver = None
+		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
+		
 		return
 
 	def bind(self,address):
-		host, placeholder_port = address
-		self.addr = (host, rxport)
+		myhost, placeholder_port = address
+		self.s_addr = (myhost, rxport)
 		self.isserver = True
-		sock.bind(self.addr)
+		self.sock.bind(self.s_addr)
 		return 
 
 	def connect(self,address):  # fill in your code here
+		servhost, port = address
+		self.c_addr = ('', rxport)
+		self.s_addr = address
 		sock.isserver = False
-		sock.bind(self.addr) 
+		sock.bind(self.c_addr) 
+		P = Packet()
+		syn_pack = P.header
+		sock.sendto(syn_pack, self.s_addr)
 		return 
 
 	def listen(self,backlog):
