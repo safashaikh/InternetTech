@@ -78,7 +78,6 @@ class socket:
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
 		sock.settimeout(0.2)
-		return sock
 
 	def bind(self,address):
 		myhost, placeholder_port = address
@@ -104,7 +103,7 @@ class socket:
 				print(ack)
 				Acked = True
 			except syssock.timeout:
-				print "Socket timeout"
+				print ("Socket timeout")
 		return 
 
 	def listen(self,backlog):
@@ -116,7 +115,7 @@ class socket:
 		self.udpPkt_hdr_data = struct.unpack(syn_buffer)
 		# Check SYN bit of packet
 		if(self.udpPkt_hdr_data[1]==0x1):
-			print("SYN Segment Successfully Received")
+			print ("SYN Segment Successfully Received" )
 			# SYN bit success, send SYNACK segment
 			P.ack_no = P.sequence_no + 1
 			P.sequence_no = random.randint(0xFFFFFFFFFFFFFFFF)
@@ -124,7 +123,7 @@ class socket:
 			sock.sendto(synack_pack, self.c_addr)
 		# Error, SYN bit not set to 1
 		else:
-			print("Error: SYN Segment Failed")
+			print ("Error: SYN Segment Failed")
 		return (clientsocket,address)
 
 	def close(self):   # fill in your code here 
