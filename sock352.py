@@ -57,9 +57,10 @@ class Packet:
 		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
-	global sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #create UDP socket
+	global sock
 	global txport
-	global rxport	
+	global rxport
+	sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)	
 	if (UDPportTx == ''):
 		txport = int(UDPportRx)	
 	if (UDPportRx == 0):
@@ -78,13 +79,13 @@ class socket:
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
 		sock.settimeout(0.2)
-		return sock
+		return
 
 	def bind(self,address):
 		myhost, placeholder_port = address
 		self.s_addr = (myhost, rxport)
 		self.isserver = True
-		self.sock.bind(self.s_addr)
+		sock.bind(self.s_addr)
 		return 
 
 	def connect(self,address):  # fill in your code here
