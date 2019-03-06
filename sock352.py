@@ -36,7 +36,7 @@ class Packet:
 		self.checksum = 0		# 2 bytes
 		self.source_port = 0x00000000 # 4 bytes
 		self.dest_port = 0x00000000 # 4 bytes
-		self.sequence_no = random.randint(0xFFFFFFFFFFFFFFFF) # 8 bytes
+		self.sequence_no = random.randint(0xFFFFFFFF) # 8 bytes
 		self.ack_no = 0x0000000000000000 # 8 bytes
 		self.window = 0x00000000 # 4 bytes
 		self.payload_len = 0x00000000 # 4 bytes
@@ -57,9 +57,10 @@ class Packet:
 		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
-	global sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #create UDP socket
+	global sock
 	global txport
-	global rxport	
+	global rxport
+	sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)	
 	if (UDPportTx == ''):
 		txport = int(UDPportRx)	
 	if (UDPportRx == 0):
@@ -83,7 +84,7 @@ class socket:
 		myhost, placeholder_port = address
 		self.s_addr = (myhost, rxport)
 		self.isserver = True
-		self.sock.bind(self.s_addr)
+		sock.bind(self.s_addr)
 		return 
 
 	def connect(self,address):  # fill in your code here
@@ -112,13 +113,13 @@ class socket:
 	def accept(self):
 		P = Packet()
 		syn_buffer = sock.recv(P.header_len) # wait for SYN segment
-		self.udpPkt_hdr_data = struct.unpack(syn_buffer)
+		header = udpPkt_hdr_data.unpack(syn_buffer)
 		# Check SYN bit of packet
-		if(self.udpPkt_hdr_data[1]==0x1):
+		if(header[1]==0x1):
 			print ("SYN Segment Successfully Received" )
 			# SYN bit success, send SYNACK segment
-			P.ack_no = P.sequence_no + 1
-			P.sequence_no = random.randint(0xFFFFFFFFFFFFFFFF)
+			P.ack_no = header[8] + 1
+			P.sequence_no = random.randint(0xFFFFFFFF)
 			synack_pack = P.header
 			sock.sendto(synack_pack, self.c_addr)
 		# Error, SYN bit not set to 1
