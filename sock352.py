@@ -46,7 +46,7 @@ class Packet:
 	def pack_header(self):
 		sock352PktHdrData = '!BBBBHHLLQQLL'
 		udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-		self.header = udpPkt_header_data.pack(
+		self.header = udpPkt_hdr_data.pack(
 			self.version, self.flags, self.opt_ptr,
 			self.protocol, self.header_len, self.checksum, 
 			self.source_port, self.dest_port, self.sequence_no, 
@@ -82,7 +82,7 @@ class socket:
 		self.s_addr = None
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
-		sock.settimeout(0.2)
+		#sock.settimeout(5)
 
 	def bind(self,address):
 		myhost, placeholder_port = address
@@ -102,7 +102,7 @@ class socket:
 		
 		Acked = False
 		while not Acked:
-			sock.sendto(SYN, self.s_addr)
+			sock.sendto(SYN, (servhost,port))
 			try:
 				ack, serveraddr = sock.recvfrom(40)
 				print(ack)
@@ -117,15 +117,15 @@ class socket:
 	def accept(self):
 		P = Packet()
 		syn_buffer = sock.recv(P.header_len) # wait for SYN segment
-		header = udpPkt_hdr_data.unpack(syn_buffer)
+		header = self.udpPkt_hdr_data.unpack(syn_buffer)
 		# Check SYN bit of packet
 		if(header[1]==0x1):
 			print ("SYN Segment Successfully Received" )
 			# SYN bit success, send SYNACK segment
 			P.ack_no = header[8] + 1
 			P.sequence_no = random.randint(0xFFFFFFFF)
-			synack_pack = P.header
-			sock.sendto(synack_pack, self.c_addr)
+			SYNACK = P.pack_header()
+			sock.sendto(SYNACK, self.c_addr)
 		# Error, SYN bit not set to 1
 		else:
 			print ("Error: SYN Segment Failed")

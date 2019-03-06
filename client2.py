@@ -33,7 +33,7 @@ def main():
         
     # the port is not used in part 1 assignment, except as a placeholder
     if (args['port']): 
-        port = args['port']
+        port = int(args['port'])
     else:
         port = 1111 
 
