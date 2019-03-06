@@ -40,7 +40,10 @@ class Packet:
 		self.ack_no = 0x0000000000000000 # 8 bytes
 		self.window = 0x00000000 # 4 bytes
 		self.payload_len = 0x00000000 # 4 bytes
+		self.header = None
 		
+			
+	def pack_header(self):
 		sock352PktHdrData = '!BBBBHHLLQQLL'
 		udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
 		self.header = udpPkt_header_data.pack(
@@ -48,12 +51,13 @@ class Packet:
 			self.protocol, self.header_len, self.checksum, 
 			self.source_port, self.dest_port, self.sequence_no, 
 			self.ack_no, self.window, self.payload_len)
-			
-		def set_header_len(self,num):
-			self.header_len = num
-		
-		def set_payload_len(self,num):
-			self.payload_len = num
+		return self.header
+	
+	def set_header_len(self,num):
+		self.header_len = num
+	
+	def set_payload_len(self,num):
+		self.payload_len = num
 		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
@@ -91,14 +95,14 @@ class socket:
 		servhost, port = address
 		self.c_addr = ('', rxport)
 		self.s_addr = address
-		sock.isserver = False
+		self.isserver = False
 		sock.bind(self.c_addr) 
 		P = Packet()
-		syn_pack = P.header
+		SYN = P.pack_header()
 		
 		Acked = False
 		while not Acked:
-			sock.sendto(syn_pack, self.s_addr)
+			sock.sendto(SYN, self.s_addr)
 			try:
 				ack, serveraddr = sock.recvfrom(40)
 				print(ack)
