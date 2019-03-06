@@ -87,14 +87,15 @@ class socket:
 	def bind(self,address):
 		myhost, placeholder_port = address
 		self.s_addr = (myhost, rxport)
+		self.c_addr = ('', txport)
 		self.isserver = True
 		sock.bind(self.s_addr)
 		return 
 
 	def connect(self,address):  # fill in your code here
-		servhost, port = address
+		servhost, placeholder_port = address
 		self.c_addr = ('', rxport)
-		self.s_addr = address
+		self.s_addr = (servhost, txport)
 		self.isserver = False
 		sock.bind(self.c_addr) 
 		P = Packet()
@@ -102,7 +103,7 @@ class socket:
 		
 		Acked = False
 		while not Acked:
-			sock.sendto(SYN, (servhost,port))
+			sock.sendto(SYN, (servhost,txport))
 			try:
 				ack, serveraddr = sock.recvfrom(40)
 				print(ack)
