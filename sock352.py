@@ -124,7 +124,7 @@ class socket:
 	def accept(self):
 		# 
 		P = Packet()
-		clientaddr, syn_buffer = self.sock.recvfrom(P.header_len) # wait for SYN segment
+		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
 		self.c_addr = clientaddr
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
 		# Check SYN bit of packet
