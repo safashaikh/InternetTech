@@ -90,7 +90,6 @@ class socket:
 		# bind to a port
 		myhost, placeholder_port = address
 		self.s_addr = (myhost, rxport)
-		self.c_addr = ('', txport)
 		self.isserver = True
 		self.sock.bind(self.s_addr)
 		return 
@@ -125,7 +124,8 @@ class socket:
 	def accept(self):
 		# 
 		P = Packet()
-		syn_buffer = self.sock.recv(P.header_len) # wait for SYN segment
+		clientaddr, syn_buffer = self.sock.recvfrom(P.header_len) # wait for SYN segment
+		self.c_addr = clientaddr
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
 		# Check SYN bit of packet
 		if(header[1]==0x1):
