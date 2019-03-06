@@ -123,7 +123,7 @@ class socket:
 		return
 
 	def accept(self):
-		# 
+		# create conn from server side
 		P = Packet()
 		syn_buffer = self.sock.recv(P.header_len) # wait for SYN segment
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
