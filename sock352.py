@@ -4,7 +4,7 @@ import socket as syssock
 import struct
 import sys
 from numpy import random
-import signal
+import threading
 
 # these functions are global to the class and
 # define the UDP ports all messages are sent
@@ -174,7 +174,42 @@ class socket:
 
 	def close(self):   # fill in your code here 
 		# close conn if last packet recv, ELSE close vars
-		return 
+		if(self.isserver==False):
+			P = Packet()
+			P.flags = SOCK352_FIN
+			CLIEND = P.pack_header()
+			self.sock.sendto(CLIEND, self.s_addr)
+			end_buffer = self.sock.recv(P.header_len)
+			header = self.udpPkt_hdr_data.unpack(end_buffer)
+			if(header[1]>>1 & 1) and (header[1]>>2 & 1):
+				print("Client connection has been terminated")
+				self.sock.close()
+				end_buffer = self.sock.recv(P.header_len)
+				header = self.udpPkt_hdr_data.unpack(end_buffer)
+				if(header[1]>>1 & 1):
+					P.flags = SOCK352_FIN + SOCK352_ACK
+					ENDACK = P.pack_header()
+					self.sock.sendto(ENDACK, self.s_addr)
+			else:
+				print("Error ACK: Connection termination failed")
+		else:
+			P = Packet()
+			end_buffer = self.sock.recv(P.header_len)
+			header = self.udpPkt_hdr_data.unpack(end_buffer)
+			if(header[1]>>1 & 1):
+				P.flags = SOCK352_FIN + SOCK352_ACK
+				ENDACK = P.pack_header()
+				self.sock.sendto(ENDACK, self.c_addr)
+				P.flags = SOCK352_FIN
+				SERVEND = P.pack_header()
+				self.sock.sendto(SERVEND, self.c_addr)
+				end_buffer = self.sock.recv(P.header_len)
+				header = self.udpPkt_hdr_data.unpack(end_buffer)
+				if(header[1]>>1 & 1) and (header[1]>>2 & 1):
+					print("Server connection has been terminated")
+					self.sock.close()
+			else:
+				print("Error: Connection termination failed") 
 
 	def send(self,buffer):
 		'''def recvthread:
