@@ -89,6 +89,7 @@ class socket:
 	def bind(self,address):
 		# bind to a port
 		myhost, placeholder_port = address
+		print("This is my host: " + str(myhost))
 		self.s_addr = (myhost, rxport)
 		self.isserver = True
 		self.sock.bind(self.s_addr)
@@ -121,29 +122,35 @@ class socket:
 		# find size of socket array
 		return
 
-	def accept(self):
-		# 
+	def accept(self): 
 		P = Packet()
 		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
 		self.c_addr = clientaddr
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
 		# Check SYN bit of packet
-		if(header[1]==0x1):
-			print ("SYN Segment Successfully Received" )
+		if(header[1]>>0 & 1):
+			print ("SYN segment successfully received" )
 			# SYN bit success, send SYNACK segment
 			P.ack_no = header[8] + 1
+			P.flags = SOCK352_SYN + SOCK352_ACK
 			print("Client seq no is: ", header[8])
 			P.sequence_no = random.randint(0xFFFFFFFF)
 			SYNACK = P.pack_header()
 			self.sock.sendto(SYNACK, self.c_addr)
+			syn_buffer = self.sock.recvfrom(P.header_len)
+			header = self.udpPkt_hdr_data.unpack(syn_buffer)
+			if(header[1]>>0 | 1) and (header[1]>>2 & 1):
+				print("Connection established" )
+				print("Client seq no is: ", header[8])
+				clientsocket = self.sock
+				address = self.c_addr
+				return (clientsocket,address)
+			else:
+				print("Error: SYN ACK from client failed")
 		# Error, SYN bit not set to 1
 		else:
-			print ("Error: SYN Segment Failed")
-		## opt 1:
-		#clientsocket = self 
-		## opt2:
-		#clientsocket = self.socket[0]
-		return (clientsocket,address)
+			print ("Error: SYN Segment failed")
+		
 
 	def close(self):   # fill in your code here 
 		# close conn if last packet recv, ELSE close vars
