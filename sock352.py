@@ -139,11 +139,11 @@ class socket:
 
 	def listen(self,backlog):
 		# do nothing
-		# find size of socket array
+		# find size of socket array 
 		return
 
 	def accept(self):
-		# create conn from server side
+		# create conn from server side 
 		P = Packet()
 		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
 		self.c_addr = clientaddr
@@ -186,7 +186,7 @@ class socket:
 			while acks left:
 				recv acks
 				mark messages acked	'''
-		# must do go back N
+		# must do go back N 🙃 🙃 🙃
 		# send length of file
 		bytessent = 0     # fill in your code here
 		return bytessent 
