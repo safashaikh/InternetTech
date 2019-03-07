@@ -27,7 +27,7 @@ class Packet:
 		SOCK352_HAS_OPT 0xA0 00010000 Option field is valid
 		'''
 		self.version = 0x1 		# 1 byte
-		self.flags = 0x1 		# 1 byte
+		self.flags = 0 		# 1 byte
 		self.opt_ptr = 0		# 1 byte
 		self.protocol = 0		# 1 byte
 		if self.opt_ptr == 0:
@@ -103,6 +103,7 @@ class socket:
 		self.isserver = False
 		self.sock.bind(self.c_addr) 
 		P = Packet()
+		P.flags = SOCK352_SYN
 		SYN = P.pack_header()
 		print("CLIENT OG Seq # is:" +str(P.sequence_no))
 		
@@ -116,6 +117,7 @@ class socket:
 				Acked = True
 			except syssock.timeout:
 				print ("Socket timeout")
+				return
 				
 		SYNACK_header = self.udpPkt_hdr_data.unpack(ack)
 		if(SYNACK_header[1]>>0 & 1 and SYNACK_header[1]>>2 & 1):
@@ -126,10 +128,10 @@ class socket:
 			P.ack_no = SYNACK_header[8] + 1
 			print("server seq # is: "+str(SYNACK_header[8]))
 			P.flags = SOCK352_ACK
-			print("Client seq no is: ", SYNACK_header[9])
+			print("Client seq no is: "+str(SYNACK_header[9]))
 			P.sequence_no = SYNACK_header[9]
-			SYNACK = P.pack_header()
-			self.sock.sendto(SYNACK, self.s_addr)
+			newACK = P.pack_header()
+			self.sock.sendto(newACK, self.s_addr)
 		# Error, SYN bit not set to 1
 		else:
 			print ("Error: SYN Segment Failed")
@@ -154,12 +156,12 @@ class socket:
 			P.flags = SOCK352_SYN + SOCK352_ACK
 			print("Client seq no is: ", header[8])
 			P.sequence_no = random.randint(0xFFFFFFFF)
-			print("SERVER OG seq no is: ", P.sequence_no)
+			print("SERVER OG seq no is: "+str(P.sequence_no))
 			SYNACK = P.pack_header()
 			self.sock.sendto(SYNACK, self.c_addr)
 			syn_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(syn_buffer)
-			if(header[1]>>0 | 1) and (header[1]>>2 & 1):
+			if(~(header[1]>>0 | 0)) and (header[1]>>2 & 1):
 				print("Connection established" )
 				print("Client seq no is: ", header[8])
 				clientsocket = self.sock
@@ -209,7 +211,7 @@ class socket:
 					print("Server connection has been terminated")
 					self.sock.close()
 			else:
-				print("Error: Connection termination failed") 
+				print("Error: Connection termination failed")
 
 	def send(self,buffer):
 		'''def recvthread:
