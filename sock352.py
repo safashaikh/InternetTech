@@ -106,6 +106,7 @@ class socket:
 		SYN = P.pack_header()
 		print("Seq # is:", P.sequence_no)
 		
+		ack  = 0
 		Acked = False
 		while not Acked:
 			self.sock.sendto(SYN, self.s_addr)
@@ -115,6 +116,23 @@ class socket:
 				Acked = True
 			except syssock.timeout:
 				print ("Socket timeout")
+				
+		SYNACK_header = self.udpPkt_hdr_data.unpack(ack)
+		if(SYNACK_header[1]>>0 & 1 and SYNACK_header[1]>>2 & 1):
+			print ("SYN Segment Successfully Received" )
+			# SYN bit success, send SYNACK segment
+			P = Packe()
+			P.flags = SOCK352_ACK
+			P.ack_no = SYNACK_header[8] + 1
+			print("server seq # is: "+str(SYNACK_header[8]))
+			P.flags = SOCK352_ACK
+			print("Client seq no is: ", SYNACK_header[9])
+			P.sequence_no = SYNACK_header[9]
+			SYNACK = P.pack_header()
+			self.sock.sendto(SYNACK, self.c_addr)
+		# Error, SYN bit not set to 1
+		else:
+			print ("Error: SYN Segment Failed")
 		return 
 
 	def listen(self,backlog):
@@ -122,7 +140,8 @@ class socket:
 		# find size of socket array
 		return
 
-	def accept(self): 
+	def accept(self):
+		# create conn from server side
 		P = Packet()
 		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
 		self.c_addr = clientaddr
