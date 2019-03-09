@@ -10,6 +10,8 @@ import threading
 # define the UDP ports all messages are sent
 # and received from
 
+firsttime = True
+
 SOCK352_SYN = 0x01 
 SOCK352_FIN = 0x02 
 SOCK352_ACK = 0x04 
@@ -105,7 +107,7 @@ class socket:
 		P = Packet()
 		P.flags = SOCK352_SYN
 		SYN = P.pack_header()
-		print("CLIENT OG Seq # is:" +str(P.sequence_no))
+		#print("CLIENT OG Seq # is:" +str(P.sequence_no))
 		
 		ack  = 0
 		Acked = False
@@ -126,9 +128,9 @@ class socket:
 			P = Packet()
 			P.flags = SOCK352_ACK
 			P.ack_no = SYNACK_header[8] + 1
-			print("server seq # is: "+str(SYNACK_header[8]))
+			#print("server seq # is: "+str(SYNACK_header[8]))
 			P.flags = SOCK352_ACK
-			print("Client seq no is: "+str(SYNACK_header[9]))
+			#print("Client seq no is: "+str(SYNACK_header[9]))
 			P.sequence_no = SYNACK_header[9]
 			newACK = P.pack_header()
 			self.sock.sendto(newACK, self.s_addr)
@@ -154,16 +156,16 @@ class socket:
 			# SYN bit success, send SYNACK segment
 			P.ack_no = header[8] + 1
 			P.flags = SOCK352_SYN + SOCK352_ACK
-			print("Client seq no is: ", header[8])
+			#print("Client seq no is: ", header[8])
 			P.sequence_no = random.randint(0xFFFFFFFF)
-			print("SERVER OG seq no is: "+str(P.sequence_no))
+			#print("SERVER OG seq no is: "+str(P.sequence_no))
 			SYNACK = P.pack_header()
 			self.sock.sendto(SYNACK, self.c_addr)
 			syn_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(syn_buffer)
 			if(~(header[1]>>0 | 0)) and (header[1]>>2 & 1):
 				print("Connection established" )
-				print("Client seq no is: ", header[8])
+				#print("Client seq no is: ", header[8])
 				clientsocket = self
 				address = self.c_addr
 				return (clientsocket,address)
@@ -220,28 +222,38 @@ class socket:
 				mark messages acked	'''
 		# must do go back N
 		# send length of file
-		print(buffer)
+		global firsttime
 		print("buffer length is: "+str(len(buffer)))
-		longPacker = struct.Struct("!L")
-		Len_to_send = longPacker.pack(len(buffer))
-		self.sock.sendto(Len_to_send, self.s_addr)
-		intnum = len(buffer) / 64000
-		num = len(buffer) / float(64000)
-		print(num)
-		segments = [buffer[i:i+64000] for i in range(0,intnum,64000)]
-		if num>intnum :
-			segments.append(buffer[(64000*intnum):])
-			intnum += 1
-		print("Number of segments: "+str(intnum))
-		bytessent = 0     # fill in your code here
-		return bytessent 
+		if firsttime:
+			self.sock.sendto(buffer, self.s_addr)
+			print("sent filesize")
+			firsttime = False
+			return 0
+		else :
+			intnum = len(buffer) / 64000
+			num = len(buffer) / float(64000)
+			segments = [buffer[i:i+64000] for i in range(0,intnum,64000)]
+			if num>intnum :
+				segments.append(buffer[(64000*intnum):])
+				intnum += 1
+			print(segments)
+			print("Number of segments: "+str(intnum))
+			self.sock.sendto(segments[0], self.s_addr)
+			bytessent = 0     # fill in your code here
+			return bytessent 
 
 	def recv(self,nbytes):
 		# only accept expected packets
 		# send acks
 		# return # of bytes received
 		# reassemble packets
-		filelen = self.sock.recv(nbytes)
-		#bytesreceived = 0     # fill in your code 
-		return filelen
+		global firsttime
+		if firsttime:
+			filelen = self.sock.recv(nbytes)
+			print("Received filesize")
+			firsttime = False
+			return filelen
+		else:
+			file = self.sock.recv(nbytes)
+			return file
 
