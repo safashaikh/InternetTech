@@ -220,13 +220,19 @@ class socket:
 				mark messages acked	'''
 		# must do go back N
 		# send length of file
-		intnum = len(buffer) // 64000
-		num = len(buffer) / 64000
-		
-		if(num > intnum):
+		print(buffer)
+		print("buffer length is: "+str(len(buffer)))
+		longPacker = struct.Struct("!L")
+		Len_to_send = longPacker.pack(len(buffer))
+		self.sock.sendto(Len_to_send, self.s_addr)
+		intnum = len(buffer) / 64000
+		num = len(buffer) / float(64000)
+		print(num)
+		segments = [buffer[i:i+64000] for i in range(0,intnum,64000)]
+		if num>intnum :
+			segments.append(buffer[(64000*intnum):])
 			intnum += 1
-			
-		
+		print("Number of segments: "+str(intnum))
 		bytessent = 0     # fill in your code here
 		return bytessent 
 
@@ -235,6 +241,7 @@ class socket:
 		# send acks
 		# return # of bytes received
 		# reassemble packets
-		bytesreceived = 0     # fill in your code 
-		return bytesreceived 
+		filelen = self.sock.recv(nbytes)
+		#bytesreceived = 0     # fill in your code 
+		return filelen
 
