@@ -164,7 +164,7 @@ class socket:
 			if(~(header[1]>>0 | 0)) and (header[1]>>2 & 1):
 				print("Connection established" )
 				print("Client seq no is: ", header[8])
-				clientsocket = self.sock
+				clientsocket = self
 				address = self.c_addr
 				return (clientsocket,address)
 			else:
@@ -218,7 +218,7 @@ class socket:
 			while acks left:
 				recv acks
 				mark messages acked	'''
-		# must do go back N 🙃 🙃 🙃
+		# must do go back N
 		# send length of file
 		bytessent = 0     # fill in your code here
 		return bytessent 
