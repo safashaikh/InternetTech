@@ -113,7 +113,7 @@ class socket:
 			self.sock.sendto(SYN, self.s_addr)
 			try:
 				ack, serveraddr = self.sock.recvfrom(40)
-				print('test',ack)
+				print(ack)
 				Acked = True
 			except syssock.timeout:
 				print ("Socket timeout")
@@ -220,6 +220,13 @@ class socket:
 				mark messages acked	'''
 		# must do go back N
 		# send length of file
+		intnum = len(buffer) // 64000
+		num = len(buffer) / 64000
+		
+		if(num > intnum):
+			intnum += 1
+			
+		
 		bytessent = 0     # fill in your code here
 		return bytessent 
 
