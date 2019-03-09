@@ -223,7 +223,7 @@ class socket:
 		# must do go back N
 		# send length of file
 		global firsttime
-		print("buffer length is: "+str(len(buffer)))
+		#print("buffer length is: "+str(len(buffer)))
 		if firsttime:
 			self.sock.sendto(buffer, self.s_addr)
 			print("sent filesize")
@@ -236,10 +236,16 @@ class socket:
 			if num>intnum :
 				segments.append(buffer[(64000*intnum):])
 				intnum += 1
-			print(segments)
-			print("Number of segments: "+str(intnum))
-			self.sock.sendto(segments[0], self.s_addr)
-			bytessent = 0     # fill in your code here
+			#print(segments)
+			#print("Number of segments: "+str(intnum))
+			bytessent = 0
+			i = 0
+			while(bytessent < len(buffer)):
+				self.sock.sendto(segments[i], self.s_addr)
+				bytessent += len(segments[i]) 
+				print("Bytes sent = "+str(bytessent))
+				i += 1
+				# fill in your code here
 			return bytessent 
 
 	def recv(self,nbytes):
