@@ -184,14 +184,14 @@ class socket:
 			end_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
 			if(header[1]>>1 & 1) and (header[1]>>2 & 1):
-				print("Client connection has been terminated")
-				self.sock.close()
 				end_buffer = self.sock.recv(P.header_len)
 				header = self.udpPkt_hdr_data.unpack(end_buffer)
 				if(header[1]>>1 & 1):
 					P.flags = SOCK352_FIN + SOCK352_ACK
 					ENDACK = P.pack_header()
 					self.sock.sendto(ENDACK, self.s_addr)
+					print("Client connection has been terminated")
+					self.sock.close()
 			else:
 				print("Error ACK: Connection termination failed")
 		else:
