@@ -218,7 +218,7 @@ class socket:
 			while acks left:
 				recv acks
 				mark messages acked	'''
-		# must do go back N 
+		# must do go back N
 		# send length of file
 		intnum = len(buffer) // 64000
 		num = len(buffer) / 64000
