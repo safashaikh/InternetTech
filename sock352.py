@@ -3,7 +3,7 @@ import socket as syssock
 #import yoursocket # drops packets
 import struct
 import sys
-import _thread
+#import _thread
 import time
 from numpy import random
 
@@ -23,8 +23,8 @@ SOCK352_HAS_OPT = 0xA0
 WINDOW_SIZE = 4
 TIMEOUT = 0.2
 base = 0
-lock = _thread.allocate_lock()
-send_timer = Timer(TIMEOUT)
+#lock = _thread.allocate_lock()
+#send_timer = Timer(TIMEOUT)
 
 def set_window_size(num_packets):
 	global base
@@ -337,6 +337,7 @@ class socket:
 			base = 0
 			bytessent = 0
 			i = 0
+			'''
 			while base < num_packets:
 				lock.acquire()
 				# Send all the packets in the window
@@ -375,7 +376,6 @@ class socket:
 				print("Bytes sent = "+str(bytessent))
 				i += 1
 				# fill in your code here
-			'''
 			return bytessent 
 
 	def recv(self,nbytes):
