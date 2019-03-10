@@ -346,9 +346,9 @@ class socket:
 			bytessent = 0
 			
 			# Start the receiver thread
-			#_thread.start_new_thread(receive, (sock,))
+			_thread.start_new_thread(sender_receive, (self.sock,))
 
-			'''
+			
 			while base < num_packets:
 				lock.acquire()
 				# Send all the packets in the window
@@ -389,7 +389,28 @@ class socket:
 				print("Bytes sent = "+str(bytessent))
 				j = j+ 1
 				# fill in your code here
+			'''
 			return bytessent 
+			
+	# Receive thread
+	def sender_receive(sock):
+		global lock
+		global base
+		global send_timer
+
+		while True:
+			ack = self.sock.recv(40)
+			ACK = self.udpPkt_hdr_data.unpack(ack)
+			print('Got ACK', ACK)
+			if (ACK[1]>>2 && 1):
+				if ACK[9] > base:
+					lock.acquire()
+					base = ACK[9] # ack_no
+					print('Base updated', base)
+					send_timer.stop()
+					lock.release()
+			else:
+				print("Did not receive an ACK message")
 
 	def recv(self,nbytes):
 		# only accept expected packets
