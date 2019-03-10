@@ -106,7 +106,8 @@ class Packet:
 		
 	def pack_header_n_data(self,data):
 		self.data = data #list(bytearray(data,'utf-8'))
-		self.payload_len = len(data)
+		self.payload_len = len(self.data)
+		#print("payload len is:"+str(self.payload_len))
 		packstr = '!BBBBHHLLQQLL'
 		packstr+= str(self.payload_len)+'s'
 		packstruct = struct.Struct(packstr)
@@ -321,22 +322,28 @@ class socket:
 			firsttime = False
 			return 0
 		else :
+			print("Size of buffer: "+str(len(buffer)))
+			print("Size of buffer (sys): "+str(sys.getsizeof(buffer)))
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
 			segments = [buffer[i:i+(64000-40)] for i in range(0,intnum,64000-40)]
-			packets = []
 			if num>intnum :
 				seg = buffer[((64000-40)*intnum):]
 				segments.append(seg)
-				P = Packet()
-				packed_seg = P.pack_header_n_data(seg)
-				packets.append(packed_seg)
 				intnum += 1
+			packets = []
+			for i in range(len(segments)):
+				P = Packet()
+				packed_seg = P.pack_header_n_data(segments[i])
+				packets.append(packed_seg)
+			'''
+			print("Num segments is: "+str(len(segments)))
+			for i in range(len(segments)):
+				print(len(segments[i]))'''
 			window_size = set_window_size(len(packets))
 			next_to_send =0
 			base = 0
 			bytessent = 0
-			i = 0
 			
 			# Start the receiver thread
 			#_thread.start_new_thread(receive, (sock,))
@@ -373,12 +380,14 @@ class socket:
 					window_size = set_window_size(num_packets)
 				lock.release()
 			'''	
+			j = 0
 			while(bytessent < len(buffer)):
-				self.sock.sendto(packets[i], self.s_addr)
-				bytessent += len(segments[i]) 
-				print("Seg size: "+str(len(segments[i])))
+				print(j)
+				self.sock.sendto(packets[j], self.s_addr)
+				bytessent += len(segments[j]) 
+				print("Seg size: "+str(len(segments[j]) ))
 				print("Bytes sent = "+str(bytessent))
-				i += 1
+				j = j+ 1
 				# fill in your code here
 			return bytessent 
 
@@ -410,16 +419,18 @@ class socket:
 			bytesrecv = 0
 			recvfile = []
 			while(bytesrecv < filelen_int):
-				if(filelen_int-bytesrecv < 64000):
+				'''if(filelen_int-bytesrecv < 64000):
 					lastPack = filelen_int-bytesrecv
 					packet = self.sock.recv(lastPack)
 					bytesrecv = bytesrecv + lastPack
 				else:
 					packet = self.sock.recv(64000)
-					bytesrecv = bytesrecv + 64000
-				print("Total Bytes Recv: "+str(bytesrecv))
+					bytesrecv = bytesrecv + len(packet)-40'''
+				packet = self.sock.recv(64000)
 				header = self.udpPkt_hdr_data.unpack_from(packet)
-				datasize = len(packet)-40
+				datasize = header[11] #len(packet)-40
+				bytesrecv += datasize
+				print("Total Bytes Recv: "+str(bytesrecv))
 				print("Datasize: "+str(datasize))
 				datafmt = '!'+str(datasize)+'s'
 				segdata = struct.unpack_from(datafmt, packet, 40)
