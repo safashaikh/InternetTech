@@ -316,7 +316,9 @@ class socket:
 		global lock
 		global base
 		global send_timer
+		global num_packets
 		sock = client[0].sock
+		print("num packets is "+str(num_packets))
 		while base < num_packets:
 			ack = sock.recv(40)
 			ACK = client[0].udpPkt_hdr_data.unpack(ack)
@@ -346,7 +348,7 @@ class socket:
 		#print("buffer length is: "+str(len(buffer)))
 		if firsttime:
 			self.sock.sendto(buffer, self.s_addr)
-			print("sent filesize")
+			print("sent filesize"+str(buffer))
 			firsttime = False
 			return 0
 		else :
@@ -354,7 +356,7 @@ class socket:
 			print("Size of buffer (sys): "+str(sys.getsizeof(buffer)))
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
-			segments = [buffer[i:i+(64000-40)] for i in range(0,intnum,64000-40)]
+			segments = [buffer[i:i+(64000-40)] for i in range(0,len(buffer),64000-40)]
 			if num>intnum :
 				seg = buffer[((64000-40)*intnum):]
 				segments.append(seg)
@@ -431,6 +433,7 @@ class socket:
 		#global filelen_int
 		if firsttime:
 			filelen = self.sock.recv(nbytes)
+			print(filelen)
 			#longPacker = struct.Struct("!L")
 			#filelen_int = longPacker.unpack(filelen)[0]
 			#print("Received filesize: "+str(filelen_int))
