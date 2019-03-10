@@ -23,7 +23,7 @@ SOCK352_RESET = 0x08
 SOCK352_HAS_OPT = 0xA0
 WINDOW_SIZE = 4
 TIMEOUT = 0.2
-SLEEP_INTERVAL = 0.2
+SLEEP_INTERVAL = 0.05
 base = 0
 lock = thread.allocate_lock()
 
@@ -314,7 +314,7 @@ class socket:
 		global send_timer
 
 		while True:
-			ack = self.sock.recv(40)
+			ack = sock.recv(40)
 			ACK = self.udpPkt_hdr_data.unpack(ack)
 			print('Got ACK', ACK)
 			if (ACK[1]>>2 & 1):
@@ -357,6 +357,7 @@ class socket:
 			packets = []
 			for i in range(len(segments)):
 				P = Packet()
+				P.seq_no = i
 				packed_seg = P.pack_header_n_data(segments[i])
 				packets.append(packed_seg)
 			'''
