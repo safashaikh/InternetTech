@@ -43,6 +43,7 @@ class Packet:
 		self.ack_no = 0x0000000000000000 # 8 bytes
 		self.window = 0x00000000 # 4 bytes
 		self.payload_len = 0x00000000 # 4 bytes
+		self.data = None
 		self.header = None
 		
 			
@@ -61,6 +62,19 @@ class Packet:
 	
 	def set_payload_len(self,num):
 		self.payload_len = num
+		
+	def pack_header_n_data(self,data):
+		self.data = data #list(bytearray(data,'utf-8'))
+		self.payload_len = len(data)
+		packstr = '!BBBBHHLLQQLL'
+		packstr+= str(self.payload_len)+'s'
+		packstruct = struct.Struct(packstr)
+		packed_seg = packstruct.pack(
+			self.version, self.flags, self.opt_ptr,
+			self.protocol, self.header_len, self.checksum, 
+			self.source_port, self.dest_port, self.sequence_no, 
+			self.ack_no, self.window, self.payload_len,self.data)
+		return packed_seg
 		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
@@ -238,18 +252,20 @@ class socket:
 			firsttime = False
 			return 0
 		else :
-			intnum = len(buffer) / 64000
-			num = len(buffer) / float(64000)
-			segments = [buffer[i:i+64000] for i in range(0,intnum,64000)]
+			intnum = len(buffer) / (64000-40)
+			num = len(buffer) / float(64000-40)
+			segments = [buffer[i:i+(64000-40)] for i in range(0,intnum,64000-40)]
 			if num>intnum :
-				segments.append(buffer[(64000*intnum):])
+				segments.append(buffer[((64000-40)*intnum):])
 				intnum += 1
 			#print(segments)
 			#print("Number of segments: "+str(intnum))
 			bytessent = 0
 			i = 0
 			while(bytessent < len(buffer)):
-				self.sock.sendto(segments[i], self.s_addr)
+				P = Packet()
+				packed_seg = P.pack_header_n_data(segments[i])
+				self.sock.sendto(packed_seg, self.s_addr)
 				bytessent += len(segments[i]) 
 				print("Bytes sent = "+str(bytessent))
 				i += 1
@@ -268,6 +284,10 @@ class socket:
 			firsttime = False
 			return filelen
 		else:
-			file = self.sock.recv(nbytes)
-			return file
+			packet = self.sock.recv(64000)
+			header = self.udpPkt_hdr_data.unpack_from(packet)
+			datasize = header[11]
+			datafmt = '!'+str(datasize)+'s'
+			segdata = struct.unpack_from(datafmt, packet, 40)
+			return segdata[0]
 
