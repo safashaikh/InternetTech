@@ -183,6 +183,14 @@ class socket:
 			P.flags = SOCK352_FIN
 			CLIEND = P.pack_header()
 			self.sock.sendto(CLIEND, self.s_addr)
+			sendack = False
+			while not sendack:
+				try:
+					self.sock.sendto(CLIEND, self.s_addr)
+					end_buffer = self.sock.recv(P.header_len)
+					sendack = True
+				except syssock.timeout:
+					pass
 			end_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
 			if(header[1]>>1 & 1) and (header[1]>>2 & 1):
