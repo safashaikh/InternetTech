@@ -191,17 +191,23 @@ class socket:
 					sendack = True
 				except syssock.timeout:
 					pass
-			end_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
-			if(header[1]>>1 & 1) and (header[1]>>2 & 1):
+			if(header[1]>>2 & 1):
 				end_buffer = self.sock.recv(P.header_len)
 				header = self.udpPkt_hdr_data.unpack(end_buffer)
-				if(header[1]>>1 & 1):
-					P.flags = SOCK352_FIN + SOCK352_ACK
-					ENDACK = P.pack_header()
-					self.sock.sendto(ENDACK, self.s_addr)
-					print("Client connection has been terminated")
-					self.sock.close()
+				if((header[1]>>1 & 1):
+					end_buffer = self.sock.recv(P.header_len)
+					header = self.udpPkt_hdr_data.unpack(end_buffer)
+					if(header[1]>>2 & 1):
+						P.flags = SOCK352_FIN + SOCK352_ACK
+						ENDACK = P.pack_header()
+						self.sock.sendto(ENDACK, self.s_addr)
+						print("Client connection has been terminated")
+						self.sock.close()
+					else:
+						print("Error ACK: Second Ack failed")
+				else:
+					print("Error: Server term failed")
 			else:
 				print("Error ACK: Connection termination failed")
 		else:
