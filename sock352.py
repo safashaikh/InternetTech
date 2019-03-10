@@ -94,6 +94,7 @@ class Packet:
 	def pack_header(self):
 		sock352PktHdrData = '!BBBBHHLLQQLL'
 		udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+		#print ("Header Seq No is: "+str(self.seq_no)
 		self.header = udpPkt_hdr_data.pack(
 			self.version, self.flags, self.opt_ptr,
 			self.protocol, self.header_len, self.checksum, 
@@ -357,7 +358,7 @@ class socket:
 			packets = []
 			for i in range(len(segments)):
 				P = Packet()
-				P.seq_no = i
+				P.sequence_no = i
 				packed_seg = P.pack_header_n_data(segments[i])
 				packets.append(packed_seg)
 			'''
@@ -456,6 +457,7 @@ class socket:
 					bytesrecv = bytesrecv + len(packet)-40'''
 				packet = self.sock.recv(64000)
 				header = self.udpPkt_hdr_data.unpack_from(packet)
+				print(header)
 				# check if seq no is expected seq no
 				if(header[8]==expectedpack):
 					print("Expected = Recv Pack: "+str(expectedpack))
