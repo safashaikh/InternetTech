@@ -309,14 +309,16 @@ class socket:
 				print("Error: Connection termination failed")
 	
 	# Receive thread
-	def sender_receive(sock):
+	def sender_receive(*sockarg):
 		global lock
 		global base
 		global send_timer
-
+		sock = sockarg[0]
+		print(sock.getsockname())
 		while True:
 			ack = sock.recv(40)
-			ACK = self.udpPkt_hdr_data.unpack(ack)
+			udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
+			ACK = udpPkt_hdr_data.unpack(ack)
 			print('Got ACK', ACK)
 			if (ACK[1]>>2 & 1):
 				if ACK[9] > base:
@@ -365,7 +367,7 @@ class socket:
 			print("Num segments is: "+str(len(segments)))
 			for i in range(len(segments)):
 				print(len(segments[i]))'''
-			window_size = set_window_size(len(packets))
+			window_size = set_window_size(1) #set_window_size(len(packets))
 			next_to_send =0
 			base = 0
 			bytessent = 0
