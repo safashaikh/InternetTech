@@ -336,6 +336,9 @@ class socket:
 			base = 0
 			bytessent = 0
 			i = 0
+			
+			# Start the receiver thread
+			_thread.start_new_thread(receive, (sock,))
 			while base < num_packets:
 				lock.acquire()
 				# Send all the packets in the window
