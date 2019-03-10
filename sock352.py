@@ -367,7 +367,7 @@ class socket:
 			print("Num segments is: "+str(len(segments)))
 			for i in range(len(segments)):
 				print(len(segments[i]))'''
-			window_size = set_window_size(1) #set_window_size(len(packets))
+			window_size = set_window_size(4) #set_window_size(len(packets))
 			next_to_send =0
 			base = 0
 			bytessent = 0
