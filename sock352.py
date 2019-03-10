@@ -357,10 +357,6 @@ class socket:
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
 			segments = [buffer[i:i+(64000-40)] for i in range(0,len(buffer),64000-40)]
-			if num>intnum :
-				seg = buffer[((64000-40)*intnum):]
-				segments.append(seg)
-				intnum += 1
 			packets = []
 			for i in range(len(segments)):
 				P = Packet()
