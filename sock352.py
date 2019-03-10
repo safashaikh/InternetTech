@@ -3,7 +3,7 @@ import socket as syssock
 #import yoursocket # drops packets
 import struct
 import sys
-import _thread
+#import _thread
 import time
 from numpy import random
 
@@ -13,6 +13,7 @@ from numpy import random
 # and received from
 
 firsttime = True
+filelen_int = 0
 
 SOCK352_SYN = 0x01 
 SOCK352_FIN = 0x02 
@@ -22,8 +23,8 @@ SOCK352_HAS_OPT = 0xA0
 WINDOW_SIZE = 4
 TIMEOUT = 0.2
 base = 0
-lock = _thread.allocate_lock()
-send_timer = Timer(TIMEOUT)
+#lock = _thread.allocate_lock()
+#send_timer = Timer(TIMEOUT)
 
 def set_window_size(num_packets):
 	global base
@@ -338,7 +339,9 @@ class socket:
 			i = 0
 			
 			# Start the receiver thread
-			_thread.start_new_thread(receive, (sock,))
+			#_thread.start_new_thread(receive, (sock,))
+
+			'''
 			while base < num_packets:
 				lock.acquire()
 				# Send all the packets in the window
@@ -373,10 +376,10 @@ class socket:
 			while(bytessent < len(buffer)):
 				self.sock.sendto(packets[i], self.s_addr)
 				bytessent += len(segments[i]) 
+				print("Seg size: "+str(len(segments[i])))
 				print("Bytes sent = "+str(bytessent))
 				i += 1
 				# fill in your code here
-			'''
 			return bytessent 
 
 	def recv(self,nbytes):
@@ -385,16 +388,43 @@ class socket:
 		# return # of bytes received
 		# reassemble packets
 		global firsttime
+		global filelen_int
 		if firsttime:
 			filelen = self.sock.recv(nbytes)
-			print("Received filesize")
+			longPacker = struct.Struct("!L")
+    			filelen_int = longPacker.unpack(filelen)[0]
+			print("Received filesize: "+str(filelen_int))
 			firsttime = False
 			return filelen
 		else:
-			packet = self.sock.recv(64000)
-			header = self.udpPkt_hdr_data.unpack_from(packet)
-			datasize = header[11]
-			datafmt = '!'+str(datasize)+'s'
-			segdata = struct.unpack_from(datafmt, packet, 40)
-			return segdata[0]
+			if(filelen_int == 0):
+				print("Error: Filelen = 0")
+				pass
+			#intnum = filelen_int / (64000-40)
+			#num = filelen_int / float(64000-40)
+			#smallLastPack = False
+			#lastPack = 0
+			#if (num > intnum):
+			#	smallLastPack = True
+			#	lastPack = filelen_int - intnum*(64000-40)
+			bytesrecv = 0
+			recvfile = []
+			while(bytesrecv < filelen_int):
+				if(filelen_int-bytesrecv < 64000):
+					lastPack = filelen_int-bytesrecv
+					packet = self.sock.recv(lastPack)
+					bytesrecv = bytesrecv + lastPack
+				else:
+					packet = self.sock.recv(64000)
+					bytesrecv = bytesrecv + 64000
+				print("Total Bytes Recv: "+str(bytesrecv))
+				header = self.udpPkt_hdr_data.unpack_from(packet)
+				datasize = len(packet)-40
+				print("Datasize: "+str(datasize))
+				datafmt = '!'+str(datasize)+'s'
+				segdata = struct.unpack_from(datafmt, packet, 40)
+				recvfile.append(segdata[0])
+			str_recvfile = ''.join(recvfile)
+			return str_recvfile
+				
 
