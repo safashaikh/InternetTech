@@ -3,7 +3,8 @@ import socket as syssock
 #import yoursocket # drops packets
 import struct
 import sys
-#import _thread
+import thread
+from timeit import Timer
 import time
 from numpy import random
 
@@ -22,9 +23,9 @@ SOCK352_RESET = 0x08
 SOCK352_HAS_OPT = 0xA0
 WINDOW_SIZE = 4
 TIMEOUT = 0.2
+SLEEP_INTERVAL = 0.2
 base = 0
-#lock = _thread.allocate_lock()
-#send_timer = Timer(TIMEOUT)
+lock = thread.allocate_lock()
 
 def set_window_size(num_packets):
 	global base
@@ -58,6 +59,8 @@ class Timer(object):
 			return False
 		else:
 			return time.time() - self._start_time >= self._duration
+
+send_timer = Timer(lambda: TIMEOUT)
 
 class Packet:
 	def __init__(self):
@@ -303,6 +306,26 @@ class socket:
 					print("Error: Second Ack from Client Failed")
 			else:
 				print("Error: Connection termination failed")
+	
+	# Receive thread
+	def sender_receive(sock):
+		global lock
+		global base
+		global send_timer
+
+		while True:
+			ack = self.sock.recv(40)
+			ACK = self.udpPkt_hdr_data.unpack(ack)
+			print('Got ACK', ACK)
+			if (ACK[1]>>2 & 1):
+				if ACK[9] > base:
+					lock.acquire()
+					base = ACK[9] # ack_no
+					print('Base updated', base)
+					send_timer.stop()
+					lock.release()
+			else:
+				print("Did not receive an ACK message")
 
 	def send(self,buffer):
 		'''def recvthread:
@@ -344,9 +367,9 @@ class socket:
 			next_to_send =0
 			base = 0
 			bytessent = 0
-			
+			num_packets = len(segments)
 			# Start the receiver thread
-			_thread.start_new_thread(sender_receive, (self.sock,))
+			thread.start_new_thread(self.sender_receive, (self.sock,))
 
 			
 			while base < num_packets:
@@ -357,7 +380,6 @@ class socket:
 					self.sock.sendto(packets[next_to_send], self.s_addr)
 					bytessent += len(segments[next_to_send]) 
 					next_to_send += 1
-
 				# Start the timer
 				if not send_timer.running():
 					print('Starting timer')
@@ -390,27 +412,10 @@ class socket:
 				j = j+ 1
 				# fill in your code here
 			'''
+			# wait for last ack before closing
+			for x in threads: 
+    				x.join()
 			return bytessent 
-			
-	# Receive thread
-	def sender_receive(sock):
-		global lock
-		global base
-		global send_timer
-
-		while True:
-			ack = self.sock.recv(40)
-			ACK = self.udpPkt_hdr_data.unpack(ack)
-			print('Got ACK', ACK)
-			if (ACK[1]>>2 && 1):
-				if ACK[9] > base:
-					lock.acquire()
-					base = ACK[9] # ack_no
-					print('Base updated', base)
-					send_timer.stop()
-					lock.release()
-			else:
-				print("Did not receive an ACK message")
 
 	def recv(self,nbytes):
 		# only accept expected packets
