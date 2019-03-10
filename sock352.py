@@ -16,6 +16,7 @@ from numpy import random
 
 firsttime = True
 filelen_int = 0
+num_packets = 0
 
 SOCK352_SYN = 0x01 
 SOCK352_FIN = 0x02 
@@ -316,7 +317,7 @@ class socket:
 		global base
 		global send_timer
 		sock = client[0].sock
-		while True:
+		while base < num_packets:
 			ack = sock.recv(40)
 			ACK = client[0].udpPkt_hdr_data.unpack(ack)
 			print('Got ACK', ACK)
@@ -341,6 +342,7 @@ class socket:
 		global lock
 		global base
 		global send_timer
+		global num_packets
 		#print("buffer length is: "+str(len(buffer)))
 		if firsttime:
 			self.sock.sendto(buffer, self.s_addr)
@@ -426,36 +428,22 @@ class socket:
 		# return # of bytes received
 		# reassemble packets
 		global firsttime
-		global filelen_int
+		#global filelen_int
 		if firsttime:
 			filelen = self.sock.recv(nbytes)
-			longPacker = struct.Struct("!L")
-    			filelen_int = longPacker.unpack(filelen)[0]
-			print("Received filesize: "+str(filelen_int))
+			#longPacker = struct.Struct("!L")
+			#filelen_int = longPacker.unpack(filelen)[0]
+			#print("Received filesize: "+str(filelen_int))
 			firsttime = False
 			return filelen
 		else:
-			if(filelen_int == 0):
+			'''if(filelen_int == 0):
 				print("Error: Filelen = 0")
-				pass
-			#intnum = filelen_int / (64000-40)
-			#num = filelen_int / float(64000-40)
-			#smallLastPack = False
-			#lastPack = 0
-			#if (num > intnum):
-			#	smallLastPack = True
-			#	lastPack = filelen_int - intnum*(64000-40)
+				pass'''
 			bytesrecv = 0
 			recvfile = []
 			expectedpack = 0
-			while(bytesrecv < filelen_int):
-				'''if(filelen_int-bytesrecv < 64000):
-					lastPack = filelen_int-bytesrecv
-					packet = self.sock.recv(lastPack)
-					bytesrecv = bytesrecv + lastPack
-				else:
-					packet = self.sock.recv(64000)
-					bytesrecv = bytesrecv + len(packet)-40'''
+			while(bytesrecv < nbytes):
 				packet = self.sock.recv(64000)
 				header = self.udpPkt_hdr_data.unpack_from(packet)
 				print(header)
