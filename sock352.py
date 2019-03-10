@@ -309,14 +309,14 @@ class socket:
 				print("Error: Connection termination failed")
 	
 	# Receive thread
-	def sender_receive(sock):
+	def sender_receive(*client):
 		global lock
 		global base
 		global send_timer
-
+		sock = client[0].sock
 		while True:
 			ack = sock.recv(40)
-			ACK = self.udpPkt_hdr_data.unpack(ack)
+			ACK = client[0].udpPkt_hdr_data.unpack(ack)
 			print('Got ACK', ACK)
 			if (ACK[1]>>2 & 1):
 				if ACK[9] > base:
@@ -371,7 +371,7 @@ class socket:
 			bytessent = 0
 			num_packets = len(segments)
 			# Start the receiver thread
-			thread.start_new_thread(self.sender_receive, (self.sock,))
+			thread.start_new_thread(self.sender_receive, (self,))
 
 			
 			while base < num_packets:
@@ -415,8 +415,7 @@ class socket:
 				# fill in your code here
 			'''
 			# wait for last ack before closing
-			for x in threads: 
-    				x.join()
+    			#thread.join()
 			return bytessent 
 
 	def recv(self,nbytes):
