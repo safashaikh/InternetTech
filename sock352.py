@@ -230,12 +230,12 @@ class socket:
 				# Waits for ACK from client, resumbits if timeout
 				sendack = False
 				while not sendack:
-				try:
-					self.sock.sendto(SERVEND, self.c_addr)
-					end_buffer = self.sock.recv(P.header_len)
-					sendack = True
-				except syssock.timeout:
-					pass
+					try:
+						self.sock.sendto(SERVEND, self.c_addr)
+						end_buffer = self.sock.recv(P.header_len)
+						sendack = True
+					except syssock.timeout:
+						pass
 				header = self.udpPkt_hdr_data.unpack(end_buffer)
 				# Checks ACK bit is 1
 				if(header[1]>>2 & 1):
