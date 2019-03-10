@@ -446,7 +446,6 @@ class socket:
 			bytesrecv = 0
 			recvfile = []
 			expectedpack = 0
-			P = Packet()
 			while(bytesrecv < filelen_int):
 				'''if(filelen_int-bytesrecv < 64000):
 					lastPack = filelen_int-bytesrecv
@@ -461,6 +460,7 @@ class socket:
 				if(header[8]==expectedpack):
 					print("Expected = Recv Pack: "+str(expectedpack))
 					# if it is, send ack where ack no = seq_no+1 and ack bit=1
+					P = Packet()
 					P.flags = SOCK352_ACK
 					P.ack_no = header[8]+1
 					PACKACK = P.pack_header()
@@ -478,10 +478,12 @@ class socket:
 				else:
 					print("Expected Pack: " + str(expectedpack) + "Recv Pack: "+str(header[8]))
 					# if not, ignore packet and re-send last ack
-					P.flags = SOCK352_ACK
-					P.ack_no = expectedpack - 1
-					PACKACK = P.pack_header()
-					self.sock.sendto(PACKACK, self.c_addr)
+					if(expectedpack!=0):				
+						P = Packet()					
+						P.flags = SOCK352_ACK
+						P.ack_no = expectedpack - 1
+						PACKACK = P.pack_header()
+						self.sock.sendto(PACKACK, self.c_addr)
 			# convert list to string and send
 			str_recvfile = ''.join(recvfile)
 			return str_recvfile
