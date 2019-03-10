@@ -4,6 +4,7 @@ import socket as syssock
 import struct
 import sys
 import thread
+import threading
 from timeit import Timer
 import time
 from numpy import random
@@ -25,7 +26,7 @@ WINDOW_SIZE = 4
 TIMEOUT = 0.2
 SLEEP_INTERVAL = 0.05
 base = 0
-lock = thread.allocate_lock()
+lock = threading.Lock()
 
 def set_window_size(num_packets):
 	global base
@@ -309,16 +310,15 @@ class socket:
 				print("Error: Connection termination failed")
 	
 	# Receive thread
-	def sender_receive(*sockarg):
+
+	def sender_receive(*client):
 		global lock
 		global base
 		global send_timer
-		sock = sockarg[0]
-		print(sock.getsockname())
+		sock = client[0].sock
 		while True:
 			ack = sock.recv(40)
-			udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
-			ACK = udpPkt_hdr_data.unpack(ack)
+			ACK = client[0].udpPkt_hdr_data.unpack(ack)
 			print('Got ACK', ACK)
 			if (ACK[1]>>2 & 1):
 				if ACK[9] > base:
@@ -373,8 +373,8 @@ class socket:
 			bytessent = 0
 			num_packets = len(segments)
 			# Start the receiver thread
-			thread.start_new_thread(self.sender_receive, (self.sock,))
-
+			t2 = threading.Thread(target = self.sender_receive, args=(self,))
+			t2.start()
 			
 			while base < num_packets:
 				lock.acquire()
@@ -416,9 +416,8 @@ class socket:
 				j = j+ 1
 				# fill in your code here
 			'''
-			# wait for last ack before closing
-			for x in threads: 
-    				x.join()
+			#wait for last ack before closing
+			t2.join()
 			return bytessent 
 
 	def recv(self,nbytes):
@@ -482,8 +481,8 @@ class socket:
 				else:
 					print("Expected Pack: " + str(expectedpack) + "Recv Pack: "+str(header[8]))
 					# if not, ignore packet and re-send last ack
-					if(expectedpack!=0):				
-						P = Packet()					
+					if(expectedpack!=0):
+						P = Packet()
 						P.flags = SOCK352_ACK
 						P.ack_no = expectedpack - 1
 						PACKACK = P.pack_header()
