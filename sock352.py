@@ -237,7 +237,7 @@ class socket:
 			P = Packet()
 			P.flags = SOCK352_FIN
 			CLIEND = P.pack_header()
-			self.sock.sendto(CLIEND, self.s_addr)
+			#self.sock.sendto(CLIEND, self.s_addr)
 			sendack = False
 			# Checks for ack or resends if timeout
 			while not sendack:
@@ -281,6 +281,7 @@ class socket:
 				# Sever sends FIN bit
 				P.flags = SOCK352_FIN
 				SERVEND = P.pack_header()
+				#self.sock.sendto(SERVEND, self.c_addr)
 				# Waits for ACK from client, resumbits if timeout
 				sendack = False
 				while not sendack:
