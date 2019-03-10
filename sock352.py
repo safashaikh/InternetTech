@@ -209,7 +209,7 @@ class socket:
 			end_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
 			if(header[1]>>1 & 1):
-				P.flags = SOCK352_FIN + SOCK352_ACK
+				P.flags = SOCK352_ACK
 				ENDACK = P.pack_header()
 				self.sock.sendto(ENDACK, self.c_addr)
 				P.flags = SOCK352_FIN
