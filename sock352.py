@@ -3,8 +3,10 @@ import socket as syssock
 #import yoursocket # drops packets
 import struct
 import sys
+import _thread
+import time
 from numpy import random
-import threading
+
 
 # these functions are global to the class and
 # define the UDP ports all messages are sent
@@ -17,6 +19,44 @@ SOCK352_FIN = 0x02
 SOCK352_ACK = 0x04 
 SOCK352_RESET = 0x08 
 SOCK352_HAS_OPT = 0xA0
+WINDOW_SIZE = 4
+TIMEOUT = 0.2
+base = 0
+lock = _thread.allocate_lock()
+send_timer = Timer(TIMEOUT)
+
+def set_window_size(num_packets):
+	global base
+	return min(WINDOW_SIZE, num_packets - base)
+
+
+class Timer(object):
+	TIMER_STOP = -1
+
+	def __init__(self, duration):
+		self._start_time = self.TIMER_STOP
+		self._duration = duration
+
+	# Starts the timer
+	def start(self):
+		if self._start_time == self.TIMER_STOP:
+			self._start_time = time.time()
+
+	# Stops the timer
+	def stop(self):
+		if self._start_time != self.TIMER_STOP:
+			self._start_time = self.TIMER_STOP
+
+	# Determines whether the timer is runnning
+	def running(self):
+		return self._start_time != self.TIMER_STOP
+
+	# Determines whether the timer timed out
+	def timeout(self):
+		if not self.running():
+			return False
+		else:
+			return time.time() - self._start_time >= self._duration
 
 class Packet:
 	def __init__(self):
@@ -269,6 +309,9 @@ class socket:
 		# must do go back N
 		# send length of file
 		global firsttime
+		global lock
+		global base
+		global send_timer
 		#print("buffer length is: "+str(len(buffer)))
 		if firsttime:
 			self.sock.sendto(buffer, self.s_addr)
@@ -279,21 +322,57 @@ class socket:
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
 			segments = [buffer[i:i+(64000-40)] for i in range(0,intnum,64000-40)]
+			packets = []
 			if num>intnum :
-				segments.append(buffer[((64000-40)*intnum):])
+				seg = buffer[((64000-40)*intnum):]
+				segments.append(seg)
+				P = Packet()
+				packed_seg = P.pack_header_n_data(seg)
+				packets.append(packed_seg)
 				intnum += 1
-			#print(segments)
-			#print("Number of segments: "+str(intnum))
+			window_size = set_window_size(len(packets))
+			next_to_send =0
+			base = 0
 			bytessent = 0
 			i = 0
+			while base < num_packets:
+				lock.acquire()
+				# Send all the packets in the window
+				while next_to_send < base + window_size:
+					print('Sending packet', next_to_send)
+					self.sock.sendto(packets[next_to_send], self.s_addr)
+					bytessent += len(segments[next_to_send]) 
+					next_to_send += 1
+
+				# Start the timer
+				if not send_timer.running():
+					print('Starting timer')
+					send_timer.start()
+
+				# Wait until a timer goes off or we get an ACK
+				while send_timer.running() and not send_timer.timeout():
+					lock.release()
+					print('Sleeping')
+					time.sleep(SLEEP_INTERVAL)
+					lock.acquire()
+
+				if send_timer.timeout():
+					# Looks like we timed out
+					print('Timeout')
+					send_timer.stop()
+					next_to_send = base
+				else:
+					print('Shifting window')
+					window_size = set_window_size(num_packets)
+				lock.release()
+			'''	
 			while(bytessent < len(buffer)):
-				P = Packet()
-				packed_seg = P.pack_header_n_data(segments[i])
-				self.sock.sendto(packed_seg, self.s_addr)
+				self.sock.sendto(packets[i], self.s_addr)
 				bytessent += len(segments[i]) 
 				print("Bytes sent = "+str(bytessent))
 				i += 1
 				# fill in your code here
+			'''
 			return bytessent 
 
 	def recv(self,nbytes):

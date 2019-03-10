@@ -78,6 +78,7 @@ def main():
     long = s2.recv(4)
     fn = longPacker.unpack(long)
     filelen = fn[0]
+    print(filelen)
 
     # # the MD5 computes a unique hash for all the data 
     # mdhash = md5.new()
