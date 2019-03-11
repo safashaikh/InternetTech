@@ -15,18 +15,17 @@ class mysocket:
 		return self.sock.bind(address)
 
 	def sendto(self,buffer,address):  # fill in your code here
-		return self.sock.sendto(buffer, address)
+		global recv_called
+		if(recv_called==5):
+			recv_called = 0
+		else:
+			return self.sock.sendto(buffer, address)
 
 	def recvfrom(self,nbytes):
 		return self.sock.recvfrom(nbytes)
 
 	def recv(self,nbytes):
-		global recv_called
-		if(recv_called==5):
-			recv_called = 0
-			return None
-		else:
-			recv_called = recv_called + 1
+		
 			return self.sock.recv(nbytes)
 
 	def close(self):   # fill in your code here 
