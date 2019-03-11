@@ -5,7 +5,7 @@ import sys
 from numpy import random
 import signal
 
-recv_called = 0
+send_called = 0
 
 class mysocket:
 	def __init__(self):  # fill in your code here
@@ -15,19 +15,19 @@ class mysocket:
 		return self.sock.bind(address)
 
 	def sendto(self,buffer,address):  # fill in your code here
-		return self.sock.sendto(buffer, address)
+		global send_called
+		if(send_called==5):
+			send_called = 0
+			#return None
+		else:
+			send_called = send_called + 1
+			self.sock.sendto(buffer, address)
 
 	def recvfrom(self,nbytes):
 		return self.sock.recvfrom(nbytes)
 
 	def recv(self,nbytes):
-		global recv_called
-		if(recv_called==5):
-			recv_called = 0
-			return None
-		else:
-			recv_called = recv_called + 1
-			return self.sock.recv(nbytes)
+		return self.sock.recv(nbytes)
 
 	def close(self):   # fill in your code here 
 		return self.sock.close()
