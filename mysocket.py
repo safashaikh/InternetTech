@@ -23,8 +23,8 @@ class mysocket:
 	def recv(self,buffer):
 		global recv_called
 		if(recv_called==5):
-			return None
 			recv_called = 0
+			return None
 		else:
 			recv_called = recv_called + 1
 			return self.recv_called(buffer)
