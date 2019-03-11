@@ -1,6 +1,6 @@
 import binascii
 import socket as syssock
-#from mysocket import mysocket # drops packets
+from mysocket import mysocket # drops packets
 import struct
 import sys
 import thread
@@ -147,8 +147,8 @@ class socket:
 		self.s_addr = None
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
-		self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-		#self.sock = mysocket()
+		#self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+		self.sock = mysocket()
 		#sock.settimeout(5)
 
 	def bind(self,address):
