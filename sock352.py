@@ -127,7 +127,7 @@ class Packet:
 		
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
-	#global sock
+	#set global sock ports
 	global txport
 	global rxport	
 	if (UDPportTx == ''):
@@ -152,11 +152,12 @@ class socket:
 		#sock.settimeout(5)
 
 	def bind(self,address):
-		# bind to a port
+		# bind to a port for server socket
 		myhost, placeholder_port = address
 		print("This is my host: " + str(myhost))
 		## server binds to its rxport
 		self.s_addr = (myhost, rxport)
+		## sets server sock flag
 		self.isserver = True
 		self.sock.bind(self.s_addr)
 		return 
@@ -209,8 +210,7 @@ class socket:
 		return 
 
 	def listen(self,backlog):
-		# do nothing
-		# find size of socket array 
+		# do nothing 
 		return
 
 	def accept(self):
@@ -230,14 +230,17 @@ class socket:
 			#print("SERVER OG seq no is: "+str(P.sequence_no))
 			SYNACK = P.pack_header()
 			self.sock.sendto(SYNACK, self.c_addr)
+			# wait for ACK from client
 			syn_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(syn_buffer)
+			# Check SYN bit is 0 and ACK bit is 1
 			if(~(header[1]>>0 | 0)) and (header[1]>>2 & 1):
 				print("Connection established" )
 				#print("Client seq no is: ", header[8])
 				clientsocket = self
 				address = self.c_addr
 				return (clientsocket,address)
+			# Else, error with final ACK
 			else:
 				print("Error: SYN ACK from client failed")
 		# Error, SYN bit not set to 1
