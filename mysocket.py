@@ -12,7 +12,7 @@ class mysocket:
 		self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
 
 	def bind(self,address):
-		return self.sock.bind(self.address)
+		return self.sock.bind(address)
 
 	def sendto(self,buffer,address):  # fill in your code here
 		return self.sock.sendto(buffer, address)
