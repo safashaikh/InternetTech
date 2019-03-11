@@ -214,15 +214,15 @@ class socket:
 		return
 
 	def accept(self):
-		# create conn from server side 
+		## create conn from server side 
 		P = Packet()
 		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
 		self.c_addr = clientaddr
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
-		# Check SYN bit of packet
+		## Check SYN bit of packet
 		if(header[1]>>0 & 1):
 			print ("SYN segment successfully received" )
-			# SYN bit success, send SYNACK segment
+			## SYN bit success, send SYNACK segment
 			P.ack_no = header[8] + 1
 			P.flags = SOCK352_SYN + SOCK352_ACK
 			#print("Client seq no is: ", header[8])
@@ -230,10 +230,10 @@ class socket:
 			#print("SERVER OG seq no is: "+str(P.sequence_no))
 			SYNACK = P.pack_header()
 			self.sock.sendto(SYNACK, self.c_addr)
-			# wait for ACK from client
+			## wait for ACK from client
 			syn_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(syn_buffer)
-			# Check SYN bit is 0 and ACK bit is 1
+			## Check SYN bit is 0 and ACK bit is 1
 			if(~(header[1]>>0 | 0)) and (header[1]>>2 & 1):
 				print("Connection established" )
 				#print("Client seq no is: ", header[8])
@@ -251,13 +251,13 @@ class socket:
 	def close(self):   # fill in your code here 
 		# close conn if last packet recv, ELSE close vars
 		if(self.isserver==False):
-			# Client inits handshake, sends FIN bit
+			## Client inits handshake, sends FIN bit
 			P = Packet()
 			P.flags = SOCK352_FIN
 			CLIEND = P.pack_header()
 			#self.sock.sendto(CLIEND, self.s_addr)
 			sendack = False
-			# Checks for ack or resends if timeout
+			## Checks for ack or resends if timeout
 			while not sendack:
 				try:
 					self.sock.sendto(CLIEND, self.s_addr)
@@ -266,19 +266,19 @@ class socket:
 				except syssock.timeout:
 					pass
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
-			# Check that ACK bit is 1
+			## Check that ACK bit is 1
 			if(header[1]>>2 & 1):
 				print("Sever ACK received")
-				# Waits for server FIN bit
+				## Waits for server FIN bit
 				end_buffer = self.sock.recv(P.header_len)
 				header = self.udpPkt_hdr_data.unpack(end_buffer)
-				# Checks that FIN bit is 1
+				## Checks that FIN bit is 1
 				if(header[1]>>1 & 1):
-					# Sends ack to server
+					## Sends ack to server
 					P.flags = SOCK352_ACK
 					ENDACK = P.pack_header()
 					self.sock.sendto(ENDACK, self.s_addr)
-					# Handshake complete
+					## Handshake complete
 					print("Client connection has been terminated")
 					self.sock.close()
 				else:
@@ -286,21 +286,21 @@ class socket:
 			else:
 				print("Error ACK: Connection termination failed")
 		else:
-			# Server wait for FIN bit from client
+			## Server wait for FIN bit from client
 			P = Packet()
 			end_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
-			# Check that FIN bit is 1
+			## Check that FIN bit is 1
 			if(header[1]>>1 & 1):
-				# Sends ACK to Client
+				## Sends ACK to Client
 				P.flags = SOCK352_ACK
 				ENDACK = P.pack_header()
 				self.sock.sendto(ENDACK, self.c_addr)
-				# Sever sends FIN bit
+				## Sever sends FIN bit
 				P.flags = SOCK352_FIN
 				SERVEND = P.pack_header()
 				#self.sock.sendto(SERVEND, self.c_addr)
-				# Waits for ACK from client, resumbits if timeout
+				## Waits for ACK from client, resumbits if timeout
 				sendack = False
 				while not sendack:
 					try:
@@ -310,9 +310,9 @@ class socket:
 					except syssock.timeout:
 						pass
 				header = self.udpPkt_hdr_data.unpack(end_buffer)
-				# Checks ACK bit is 1
+				## Checks ACK bit is 1
 				if(header[1]>>2 & 1):
-					# Double handshake complete, end connection
+					## Double handshake complete, end connection
 					print("Server connection has been terminated")
 					self.sock.close()
 				else:
