@@ -62,6 +62,7 @@ class Timer(object):
 		else:
 			return time.time() - self._start_time >= self._duration
 
+## init Timer with TIMEOUT = 0.2
 send_timer = Timer(lambda: TIMEOUT)
 
 class Packet:
@@ -317,12 +318,16 @@ class socket:
 		global base
 		global send_timer
 		global num_packets
+		## extract client socket passed in
 		sock = client[0].sock
 		print("num packets is "+str(num_packets))
+		## while not all packets acknowledged
 		while base < num_packets:
+			## recv ACK with header size
 			ack = sock.recv(40)
 			ACK = client[0].udpPkt_hdr_data.unpack(ack)
 			print('Got ACK', ACK)
+			## check if ACK bit set otw print error
 			if (ACK[1]>>2 & 1):
 				if ACK[9] > base:
 					lock.acquire()
@@ -334,10 +339,6 @@ class socket:
 				print("Did not receive an ACK message")
 
 	def send(self,buffer):
-		'''def recvthread:
-			while acks left:
-				recv acks
-				mark messages acked	'''
 		# must do go back N
 		# send length of file
 		global firsttime
@@ -345,51 +346,56 @@ class socket:
 		global base
 		global send_timer
 		global num_packets
-		#print("buffer length is: "+str(len(buffer)))
+		## first time send is called, we are simply sending file length
 		if firsttime:
 			self.sock.sendto(buffer, self.s_addr)
 			print("sent filesize"+str(buffer))
 			firsttime = False
 			return 0
+		## Now sending packets
 		else :
 			print("Size of buffer: "+str(len(buffer)))
-			print("Size of buffer (sys): "+str(sys.getsizeof(buffer)))
+			## Divide buffer into segments of 64000-40; we subtract 40 because of packet header
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
 			segments = [buffer[i:i+(64000-40)] for i in range(0,len(buffer),64000-40)]
+			
+			## Create individual packets from those segments
 			packets = []
 			for i in range(len(segments)):
 				P = Packet()
 				P.sequence_no = i
 				packed_seg = P.pack_header_n_data(segments[i])
 				packets.append(packed_seg)
-			'''
-			print("Num segments is: "+str(len(segments)))
-			for i in range(len(segments)):
-				print(len(segments[i]))'''
+			## Set arbitrary window size of 4
 			window_size = set_window_size(4) #set_window_size(len(packets))
+			## base - sequence_no of first segment in window
+			## next_to_send = sequence_no of next segment not already sent
+			## bytessent - bytes sent to server (not essential)
+			## num_packets - global keeping track of total packets - needed for thread 2 as well
 			next_to_send =0
 			base = 0
 			bytessent = 0
 			num_packets = len(segments)
-			# Start the receiver thread
+			
+			## Start thread 2 to receive ACKs
 			t2 = threading.Thread(target = self.sender_receive, args=(self,))
 			t2.start()
-			
+			## while packets are still left
 			while base < num_packets:
 				lock.acquire()
-				# Send all the packets in the window
+				## Send all the packets in the window
 				while next_to_send < base + window_size:
 					print('Sending packet', next_to_send)
 					self.sock.sendto(packets[next_to_send], self.s_addr)
 					bytessent += len(segments[next_to_send]) 
 					next_to_send += 1
-				# Start the timer
+				## Start the timer
 				if not send_timer.running():
 					print('Starting timer')
 					send_timer.start()
 
-				# Wait until a timer goes off or we get an ACK
+				## Wait until a timer goes off or if we receive an ACK
 				while send_timer.running() and not send_timer.timeout():
 					lock.release()
 					print('Sleeping')
@@ -397,26 +403,17 @@ class socket:
 					lock.acquire()
 
 				if send_timer.timeout():
-					# Looks like we timed out
+					## Timed out
 					print('Timeout')
 					send_timer.stop()
+					## if timed out, resend from base, which is the ack_no of last ack - indicating next segment to send
 					next_to_send = base
 				else:
 					print('Shifting window')
 					window_size = set_window_size(num_packets)
 				lock.release()
-			'''	
-			j = 0
-			while(bytessent < len(buffer)):
-				print(j)
-				self.sock.sendto(packets[j], self.s_addr)
-				bytessent += len(segments[j]) 
-				print("Seg size: "+str(len(segments[j]) ))
-				print("Bytes sent = "+str(bytessent))
-				j = j+ 1
-				# fill in your code here
-			'''
-			#wait for last ack before closing
+			
+			## wait for last ack before closing
 			t2.join()
 			return bytessent 
 
@@ -436,9 +433,6 @@ class socket:
 			firsttime = False
 			return filelen
 		else:
-			'''if(filelen_int == 0):
-				print("Error: Filelen = 0")
-				pass'''
 			bytesrecv = 0
 			recvfile = []
 			expectedpack = 0
