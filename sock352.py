@@ -1,6 +1,6 @@
 import binascii
 import socket as syssock
-from mysocket import mysocket # drops packets
+#from mysocket import mysocket # drops packets
 import struct
 import sys
 import thread
@@ -147,9 +147,9 @@ class socket:
 		self.s_addr = None
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
-		#self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-		self.sock = mysocket()
-		#sock.settimeout(5)
+		self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+		#self.sock = mysocket()
+		self.sock.settimeout(5)
 
 	def bind(self,address):
 		# bind to a port for server socket
@@ -275,8 +275,9 @@ class socket:
 				## Checks that FIN bit is 1
 				if(header[1]>>1 & 1):
 					## Sends ack to server
-					P.flags = SOCK352_ACK
-					ENDACK = P.pack_header()
+					P2 = Packet()
+					P2.flags = SOCK352_ACK
+					ENDACK = P2.pack_header()
 					self.sock.sendto(ENDACK, self.s_addr)
 					## Handshake complete
 					print("Client connection has been terminated")
@@ -287,18 +288,19 @@ class socket:
 				print("Error ACK: Connection termination failed")
 		else:
 			## Server wait for FIN bit from client
-			P = Packet()
-			end_buffer = self.sock.recv(P.header_len)
+			end_buffer = self.sock.recv(40)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
 			## Check that FIN bit is 1
 			if(header[1]>>1 & 1):
 				## Sends ACK to Client
+				P = Packet()
 				P.flags = SOCK352_ACK
 				ENDACK = P.pack_header()
 				self.sock.sendto(ENDACK, self.c_addr)
 				## Sever sends FIN bit
-				P.flags = SOCK352_FIN
-				SERVEND = P.pack_header()
+				P2 = Packet()
+				P2.flags = SOCK352_FIN
+				SERVEND = P2.pack_header()
 				#self.sock.sendto(SERVEND, self.c_addr)
 				## Waits for ACK from client, resumbits if timeout
 				sendack = False

@@ -32,4 +32,7 @@ class mysocket:
 
 	def close(self):   # fill in your code here 
 		return self.sock.close()
+		
+	def settimeout(self,num):
+		self.sock.settimeout(num)
 
