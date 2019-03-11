@@ -447,39 +447,36 @@ class socket:
 			expectedpack = 0
 			while(bytesrecv < nbytes):
 				packet = self.sock.recv(64000)
-				if(packet is None):
-					print("Empty packet")
+				header = self.udpPkt_hdr_data.unpack_from(packet)
+				print(header)
+				# check if seq no is expected seq no
+				if(header[8]==expectedpack):
+					print("Expected = Recv Pack: "+str(expectedpack))
+					# if it is, send ack where ack no = seq_no+1 and ack bit=1
+					P = Packet()
+					P.flags = SOCK352_ACK
+					P.ack_no = header[8]+1
+					PACKACK = P.pack_header()
+					self.sock.sendto(PACKACK, self.c_addr)
+					expectedpack = expectedpack + 1
+					# keep track of how many bytes are recv
+					datasize = header[11] #len(packet)-40
+					bytesrecv += datasize
+					print("Total Bytes Recv: "+str(bytesrecv))
+					print("Datasize: "+str(datasize))
+					# unpack data and append to list
+					datafmt = '!'+str(datasize)+'s'
+					segdata = struct.unpack_from(datafmt, packet, 40)
+					recvfile.append(segdata[0])
 				else:
-					header = self.udpPkt_hdr_data.unpack_from(packet)
-					print(header)
-					# check if seq no is expected seq no
-					if(header[8]==expectedpack):
-						print("Expected = Recv Pack: "+str(expectedpack))
-						# if it is, send ack where ack no = seq_no+1 and ack bit=1
+					print("Expected Pack: " + str(expectedpack) + "Recv Pack: "+str(header[8]))
+					# if not, ignore packet and re-send last ack
+					if(expectedpack!=0):
 						P = Packet()
 						P.flags = SOCK352_ACK
-						P.ack_no = header[8]+1
+						P.ack_no = expectedpack - 1
 						PACKACK = P.pack_header()
 						self.sock.sendto(PACKACK, self.c_addr)
-						expectedpack = expectedpack + 1
-						# keep track of how many bytes are recv
-						datasize = header[11] #len(packet)-40
-						bytesrecv += datasize
-						print("Total Bytes Recv: "+str(bytesrecv))
-						print("Datasize: "+str(datasize))
-						# unpack data and append to list
-						datafmt = '!'+str(datasize)+'s'
-						segdata = struct.unpack_from(datafmt, packet, 40)
-						recvfile.append(segdata[0])
-					else:
-						print("Expected Pack: " + str(expectedpack) + "Recv Pack: "+str(header[8]))
-						# if not, ignore packet and re-send last ack
-						if(expectedpack!=0):
-							P = Packet()
-							P.flags = SOCK352_ACK
-							P.ack_no = expectedpack - 1
-							PACKACK = P.pack_header()
-							self.sock.sendto(PACKACK, self.c_addr)
 			# convert list to string and send
 			str_recvfile = ''.join(recvfile)
 			return str_recvfile
