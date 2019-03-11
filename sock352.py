@@ -155,6 +155,7 @@ class socket:
 		# bind to a port
 		myhost, placeholder_port = address
 		print("This is my host: " + str(myhost))
+		## server binds to its rxport
 		self.s_addr = (myhost, rxport)
 		self.isserver = True
 		self.sock.bind(self.s_addr)
@@ -163,18 +164,24 @@ class socket:
 	def connect(self,address):  # fill in your code here
 		# create conn from client perspective
 		servhost, placeholder_port = address
+		## client calls connect, so c_addr is local and port is rxport
+		## s_addr is hostname and txport
 		self.c_addr = ('', rxport)
 		self.s_addr = (servhost, txport)
+		## this is client
 		self.isserver = False
+		## bind to rxport
 		self.sock.bind(self.c_addr) 
+		
+		## initiate handshake
 		P = Packet()
-		P.flags = SOCK352_SYN
+		P.flags = SOCK352_SYN ## set SYN bit
 		SYN = P.pack_header()
 		#print("CLIENT OG Seq # is:" +str(P.sequence_no))
-		
-		ack  = 0
+		ack = 0
 		Acked = False
 		while not Acked:
+			## send SYN message to server until Acked
 			self.sock.sendto(SYN, self.s_addr)
 			try:
 				ack, serveraddr = self.sock.recvfrom(40)
@@ -183,18 +190,17 @@ class socket:
 			except syssock.timeout:
 				print ("Socket timeout")
 				return
-				
+		## client received ACK, proceed to unpack
 		SYNACK_header = self.udpPkt_hdr_data.unpack(ack)
 		if(SYNACK_header[1]>>0 & 1 and SYNACK_header[1]>>2 & 1):
 			print ("SYN Segment Successfully Received" )
-			# SYN bit success, send SYNACK segment
+			## SYN bit success, send ACK message, SYN bit is 0
 			P = Packet()
-			P.flags = SOCK352_ACK
-			P.ack_no = SYNACK_header[8] + 1
+			P.flags = SOCK352_ACK ## set ACK
+			P.ack_no = SYNACK_header[8] + 1 ## ACK NO is server seq_no + 1
 			#print("server seq # is: "+str(SYNACK_header[8]))
-			P.flags = SOCK352_ACK
 			#print("Client seq no is: "+str(SYNACK_header[9]))
-			P.sequence_no = SYNACK_header[9]
+			P.sequence_no = SYNACK_header[9] ## client seq no is server ack = prev_client_seq_no + 1
 			newACK = P.pack_header()
 			self.sock.sendto(newACK, self.s_addr)
 		# Error, SYN bit not set to 1
