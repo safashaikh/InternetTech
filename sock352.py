@@ -474,7 +474,7 @@ class socket:
 					if(expectedpack!=0):
 						P = Packet()
 						P.flags = SOCK352_ACK
-						P.ack_no = expectedpack - 1
+						P.ack_no = expectedpack
 						PACKACK = P.pack_header()
 						self.sock.sendto(PACKACK, self.c_addr)
 			# convert list to string and send
