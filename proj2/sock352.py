@@ -160,8 +160,8 @@ ENCRYPT = 236
 sock352HdrStructStr = '!BBBBHHLLQQLL'
 
 def init(UDPportTx,UDPportRx):
-    global sock352portTx
-    global sock352portRx
+	global sock352portTx
+	global sock352portRx
 	if (UDPportTx == ''):
 		sock252portTx = int(UDPportRx)	
 	if (UDPportRx == 0):
@@ -179,40 +179,40 @@ def init(UDPportTx,UDPportRx):
 # read the keyfile. The result should be a private key and a keychain of
 # public keys
 def readKeyChain(filename):
-    global publicKeysHex
-    global privateKeysHex 
-    global publicKeys
-    global privateKeys 
-    
-    if (filename):
-        try:
-            keyfile_fd = open(filename,"r")
-            for line in keyfile_fd:
-                words = line.split()
-                # check if a comment
-                # more than 2 words, and the first word does not have a
-                # hash, we may have a valid host/key pair in the keychain
-                if ( (len(words) >= 4) and (words[0].find("#") == -1)):
-                    host = words[1]
-                    port = words[2]
-                    keyInHex = words[3]
-                    if (words[0] == "private"):
-                        privateKeysHex[(host,port)] = keyInHex
-                        privateKeys[(host,port)] = nacl.public.PrivateKey(keyInHex, nacl.encoding.HexEncoder)
-                    elif (words[0] == "public"):
-                        publicKeysHex[(host,port)] = keyInHex
-                        publicKeys[(host,port)] = nacl.public.PublicKey(keyInHex, nacl.encoding.HexEncoder)
-        except Exception,e:
-            print ( "error: opening keychain file: %s %s" % (filename,repr(e)))
-    else:
-            print ("error: No filename presented")             
+	global publicKeysHex
+	global privateKeysHex 
+	global publicKeys
+	global privateKeys 
 
-    return (publicKeys,privateKeys)
+	if (filename):
+		try:
+			keyfile_fd = open(filename,"r")
+			for line in keyfile_fd:
+				words = line.split()
+				# check if a comment
+				# more than 2 words, and the first word does not have a
+				# hash, we may have a valid host/key pair in the keychain
+				if ( (len(words) >= 4) and (words[0].find("#") == -1)):
+					host = words[1]
+					port = words[2]
+					keyInHex = words[3]
+					if (words[0] == "private"):
+						privateKeysHex[(host,port)] = keyInHex
+						privateKeys[(host,port)] = nacl.public.PrivateKey(keyInHex, nacl.encoding.HexEncoder)
+					elif (words[0] == "public"):
+						publicKeysHex[(host,port)] = keyInHex
+						publicKeys[(host,port)] = nacl.public.PublicKey(keyInHex, nacl.encoding.HexEncoder)
+		except Exception,e:
+			print ( "error: opening keychain file: %s %s" % (filename,repr(e)))
+	else:
+			print ("error: No filename presented")             
+
+	return (publicKeys,privateKeys)
 
 class socket:
-    
-    def __init__(self):
-        # create socket
+
+	def __init__(self):
+		# create socket
 		self.c_addr = None
 		self.s_addr = None
 		self.isserver = None
@@ -226,9 +226,9 @@ class socket:
 		self.privatekey = None
 		self.box = None
 		self.nonce = None
-        
-    def bind(self,address):
-        # bind to a port for server socket
+		
+	def bind(self,address):
+		# bind to a port for server socket
 		myhost, placeholder_port = address
 		#print("This is my host: " + str(myhost))
 		## server binds to its sock352portRx
@@ -238,18 +238,18 @@ class socket:
 		self.sock.bind(self.s_addr)
 		return 
 
-    def connect(self,*args):
+	def connect(self,*args):
 
-        # example code to parse an argument list (use option arguments if you want)
-        global sock352portTx
-        global ENCRYPT
-        		
+		# example code to parse an argument list (use option arguments if you want)
+		global sock352portTx
+		global ENCRYPT
+				
 		# create conn from client perspective
 		if (len(args) >= 1): 
-            servhost,placeholder_port = args[0]
+			servhost,placeholder_port = args[0]
 		if (len(args) >= 2):
-            if (args[1] == ENCRYPT):
-                self.encrypt = True
+			if (args[1] == ENCRYPT):
+				self.encrypt = True
 				
 		## client calls connect, so c_addr is local and port is sock352portRx
 		## s_addr is hostname and sock352portTx
@@ -324,18 +324,18 @@ class socket:
 			self.box = Box(self.privatekey, self.publickey)
 		return 
 
-    def listen(self,backlog):
-        # listen is not used in this assignments 
-        pass
-    
+	def listen(self,backlog):
+		# listen is not used in this assignments 
+		pass
 
-    def accept(self,*args):
-        # example code to parse an argument list (use option arguments if you want)
-        global ENCRYPT
-        if (len(args) >= 1):
-            if (args[0] == ENCRYPT):
-                self.encrypt = True
-        # your code goes here 
+
+	def accept(self,*args):
+		# example code to parse an argument list (use option arguments if you want)
+		global ENCRYPT
+		if (len(args) >= 1):
+			if (args[0] == ENCRYPT):
+				self.encrypt = True
+		# your code goes here 
 		## create conn from server side 
 		P = Packet()
 		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
@@ -396,7 +396,7 @@ class socket:
 		## if both keys are successfully found, create box object
 		if (self.encrypt == True) and (self.publickey is not None) and (self.privatekey is not None):
 			self.box = Box(self.private, self.public)
-    
+
 	def close(self):   # fill in your code here 
 		# close conn if last packet recv, ELSE close vars
 		if(self.isserver==False):
@@ -470,7 +470,7 @@ class socket:
 					print("Error: Second Ack from Client Failed")
 			else:
 				print("Error: Connection termination failed")
-	
+
 	# Receive thread
 
 	def sender_receive(*client):
