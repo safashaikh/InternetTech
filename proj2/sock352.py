@@ -210,7 +210,8 @@ def readKeyChain(filename):
 			print ( "error: opening keychain file: %s %s" % (filename,repr(e)))
 	else:
 			print ("error: No filename presented")             
-
+	print("The public keys are: " + str(publicKeys.keys()))
+	print("The private keys are: " + str(privateKeys.keys()))
 	return (publicKeys,privateKeys)
 
 class socket:
@@ -301,8 +302,9 @@ class socket:
 		## find public/private keys
 		if(self.encrypt == True):
 			# find public key using server's address
-			if (self.s_addr in publicKeys):
-				self.publickey = publicKeys[self.s_addr]
+			host, port = self.s_addr
+			if ((host, str(port)) in publicKeys):
+				self.publickey = publicKeys[(host, str(port))]
 			# if no keys for the specific address, use wildcard public key
 			elif (('*','*') in publicKeys):
 				self.publickey = publicKeys[('*','*')]
@@ -311,8 +313,9 @@ class socket:
 				print("Error: No public key found with port and host or wildcard, continue without encryption")
 				self.encrypt = False
 			# find private key using client's own address
-			if (self.c_addr in privateKeys):
-				self.privatekey = privateKeys[self.c_addr]
+			host, port = self.c_addr
+			if ((host, str(port)) in privateKeys):
+				self.privatekey = privateKeys[(host, str(port))]
 			# if no keys for the specific address, use wildcard private key
 			elif (('*','*') in privateKeys):
 				self.privatekey = privateKeys[('*','*')]
@@ -366,19 +369,18 @@ class socket:
 				#print("Client seq no is: ", header[8])
 				clientsocket = self
 				address = self.c_addr
-				return (clientsocket,address)
 			# Else, error with final ACK
 			else:
 				print("Error: SYN ACK from client failed")
 		# Error, SYN bit not set to 1
 		else:
-			print ("Error: SYN Segment failed")
-			
+			print ("Error: SYN Segment failed")	
 		## find public/private keys
 		if(self.encrypt == True):
 			# find public key using client's address
-			if (self.c_addr in publicKeys):
-				self.publickey = publicKeys[self.c_addr]
+			host, port = self.c_addr			
+			if ((host, str(port)) in publicKeys):
+				self.publickey = publicKeys[(host, str(port))]
 			# if no keys for the specific address, use wildcard public key
 			elif (('*','*') in publicKeys):
 				self.publickey = publicKeys[('*','*')]
@@ -387,8 +389,9 @@ class socket:
 				print("Error: No public key found with port and host or wildcard, continue without encryption")
 				self.encrypt = False
 			# find private key using server's own address
-			if (self.s_addr in privateKeys):
-				self.privatekey = privateKeys[self.s_addr]
+			host, port = self.s_addr
+			if ((host, str(port)) in privateKeys):
+				self.privatekey = privateKeys[(host, str(port))]
 			# if no keys for the specific address, use wildcard private key
 			elif (('*','*') in privateKeys):
 				self.privatekey = privateKeys[('*','*')]
@@ -398,8 +401,11 @@ class socket:
 				self.encrypt = False
 				
 		## if both keys are successfully found, create box object
+		print("Public key: " + str(self.publickey))
+		print("Private key: " + str(self.privatekey))
 		if (self.encrypt == True) and (self.publickey is not None) and (self.privatekey is not None):
 			self.box = Box(self.private, self.public)
+		return (clientsocket,address)
 
 	def close(self):   # fill in your code here 
 		# close conn if last packet recv, ELSE close vars
