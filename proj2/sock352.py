@@ -1,3 +1,22 @@
+# main libraries 
+import binascii
+import socket as syssock
+import struct
+import sys
+import thread
+import threading
+import time
+from numpy import random
+
+# encryption libraries 
+import nacl.utils
+import nacl.secret
+import nacl.utils
+from nacl.public import PrivateKey, Box
+
+# if you want to debug and print the current stack frame 
+from inspect import currentframe, getframeinfo
+
 # these functions are global to the class and
 # define the UDP ports all messages are sent
 # and received from
@@ -114,21 +133,6 @@ class Packet:
 # this is the initial socket library for project 2 
 # You wil need to fill in the various methods in this
 # library 
-
-# main libraries 
-import binascii
-import socket as syssock
-import struct
-import sys
-
-# encryption libraries 
-import nacl.utils
-import nacl.secret
-import nacl.utils
-from nacl.public import PrivateKey, Box
-
-# if you want to debug and print the current stack frame 
-from inspect import currentframe, getframeinfo
 
 # these are globals to the sock352 class and
 # define the UDP ports all messages are sent
@@ -297,20 +301,20 @@ class socket:
 		## find public/private keys
 		if(self.encrypt == True):
 			# find public key using server's address
-			if (publicKeys[self.s_addr] is not None):
+			if (self.s_addr in publicKeys):
 				self.publickey = publicKeys[self.s_addr]
 			# if no keys for the specific address, use wildcard public key
-			elif (publicKeys[('*','*')] is not None):
+			elif (('*','*') in publicKeys):
 				self.publickey = publicKeys[('*','*')]
 			# no suitable key found, continue w/o encryption
 			else:
 				print("Error: No public key found with port and host or wildcard, continue without encryption")
 				self.encrypt = False
 			# find private key using client's own address
-			if (privateKeys[self.c_addr] is not None):
+			if (self.c_addr in privateKeys):
 				self.privatekey = privateKeys[self.c_addr]
 			# if no keys for the specific address, use wildcard private key
-			elif (privateKeys[('*','*')] is not None):
+			elif (('*','*') in privateKeys):
 				self.privatekey = privateKeys[('*','*')]
 			# no suitable key found, continue w/o encryption
 			else:
@@ -373,20 +377,20 @@ class socket:
 		## find public/private keys
 		if(self.encrypt == True):
 			# find public key using client's address
-			if (publicKeys[self.c_addr] is not None):
+			if (self.c_addr in publicKeys):
 				self.publickey = publicKeys[self.c_addr]
 			# if no keys for the specific address, use wildcard public key
-			elif (publicKeys[('*','*')] is not None):
+			elif (('*','*') in publicKeys):
 				self.publickey = publicKeys[('*','*')]
 			# no suitable key found, continue w/o encryption
 			else:
 				print("Error: No public key found with port and host or wildcard, continue without encryption")
 				self.encrypt = False
 			# find private key using server's own address
-			if (privateKeys[self.s_addr] is not None):
+			if (self.s_addr in privateKeys):
 				self.privatekey = privateKeys[self.s_addr]
 			# if no keys for the specific address, use wildcard private key
-			elif (privateKeys[('*','*')] is not None):
+			elif (('*','*') in privateKeys):
 				self.privatekey = privateKeys[('*','*')]
 			# no suitable key found, continue w/o encryption
 			else:
