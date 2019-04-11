@@ -326,6 +326,8 @@ class socket:
 				
 		## if both keys are successfully found, create nonce and box object
 		## only client needs to do nonce since client is the one encrypting
+		print("Public key: " + str(self.publickey))
+		print("Private key: " + str(self.privatekey))
 		if (self.encrypt == True) and (self.publickey is not None) and (self.privatekey is not None):
 			self.nonce = nacl.utils.random(Box.NONCE_SIZE)
 			self.box = Box(self.privatekey, self.publickey)
@@ -403,8 +405,9 @@ class socket:
 		## if both keys are successfully found, create box object
 		print("Public key: " + str(self.publickey))
 		print("Private key: " + str(self.privatekey))
+		print("The client addr is: "+str(self.c_addr))
 		if (self.encrypt == True) and (self.publickey is not None) and (self.privatekey is not None):
-			self.box = Box(self.private, self.public)
+			self.box = Box(self.privatekey, self.publickey)
 		return (clientsocket,address)
 
 	def close(self):   # fill in your code here 
@@ -521,14 +524,17 @@ class socket:
 			self.sock.sendto(buffer, self.s_addr)
 			#print("sent filesize"+str(buffer))
 			firsttime = False
-			return 0
+			return len(buffer)
 		## Now sending packets
-		if (firsttime == False) and (self.encrypt == False):
+		if (firsttime == False):
 			#print("Size of buffer: "+str(len(buffer)))
 			## Divide buffer into segments of 64000-40; we subtract 40 because of packet header
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
-			segments = [buffer[i:i+(64000-40)] for i in range(0,len(buffer),64000-40)]
+			if (self.encrypt == False):
+				segments = [buffer[i:i+(64000-40)] for i in range(0,len(buffer),64000-40)]
+			else:
+				segments = [buffer[i:i+(64000-80)] for i in range(0,len(buffer),64000-80)]
 			
 			## Create individual packets from those segments
 			packets = []
@@ -562,7 +568,10 @@ class socket:
 				while next_to_send < base + window_size:
 					#print('Sending packet', next_to_send)
 					self.sock.sendto(packets[next_to_send], self.s_addr)
-					bytessent += len(segments[next_to_send]) 
+					if (self.encrypt == False):
+						bytessent += len(segments[next_to_send])
+ 					else:
+						bytessent += len(segments[next_to_send])-40
 					next_to_send += 1
 				## Start the timer
 				if not send_timer.running():
@@ -589,6 +598,7 @@ class socket:
 			
 			## wait for last ack before closing
 			t2.join()
+			print("bytessent: "+str(bytessent))
 			return bytessent 
 
 	def recv(self,nbytes):
@@ -635,10 +645,11 @@ class socket:
 						# unpack data and append to list
 						datafmt = '!'+str(datasize)+'s'
 						segdata = struct.unpack_from(datafmt, packet, 40)
+						mydata = segdata[0]
 						# decrypt if encryption flag is set and options header is 01
 						if (self.encrypt == True) and (header[2]==0x1):
-							segdata[0] = self.box.decrypt(segdata[0])
-						recvfile.append(segdata[0])
+							mydata = self.box.decrypt(segdata[0])
+						recvfile.append(mydata)
 					else:
 						#print("Expected Pack: " + str(expectedpack) + "Recv Pack: "+str(header[8]))
 						# if not, ignore packet and re-send last ack

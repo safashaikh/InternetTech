@@ -78,9 +78,11 @@ def main():
     filesize = len(whole_file)
     longPacker = struct.Struct("!L")
     fileLenPacked = longPacker.pack(filesize);
-    s.send(fileLenPacked)
-	
-    sent = s.send(fragment[totalsent:])
+    x = s.send(fileLenPacked)
+    print("x: "+str(x))	
+    sent = s.send(whole_file)
+    print("sent: "+str(sent))
+    print("filesize: "+str(filesize))
     if (sent != filesize):
         raise RuntimeError("socket broken")
 
@@ -96,6 +98,4 @@ def main():
     s.close()
 # this gives a main function in Python
 if __name__ == "__main__":
-    main()
-
-
+	main()

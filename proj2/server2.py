@@ -82,15 +82,18 @@ def main():
     long = s2.recv(4)
     fn = longPacker.unpack(long)
     filelen = fn[0]
-
-
+    print(filelen)
     start_stamp = time.clock()
 
-    while (bytes_to_receive > 0):
-        fragment = s2.recv(FRAGMENTSIZE)
+    #while (bytes_to_receive > 0):
+    #    fragment = s2.recv(FRAGMENTSIZE)
 
-        bytes_to_receive = bytes_to_receive - len(fragment)
-        fd.write(fragment)
+    #    bytes_to_receive = bytes_to_receive - len(fragment)
+    #    fd.write(fragment)
+
+    file = s2.recv(filelen)
+    # mdhash.update(file)
+    fd.write(file)
 
     end_stamp = time.clock() 
     lapsed_seconds = end_stamp - start_stamp
@@ -106,4 +109,4 @@ def main():
 
 # create a main function in Python
 if __name__ == "__main__":
-    main()
+	main()
