@@ -303,8 +303,11 @@ class socket:
 		if(self.encrypt == True):
 			# find public key using server's address
 			host, port = self.s_addr
-			if ((host, str(port)) in publicKeys):
-				self.publickey = publicKeys[(host, str(port))]
+			tuple = syssock.gethostbyaddr(host)
+			for i in tuple:
+				if ((i, str(port)) in publicKeys):
+					self.publickey = publicKeys[(i, str(port))]
+					break
 			# if no keys for the specific address, use wildcard public key
 			elif (('*','*') in publicKeys):
 				self.publickey = publicKeys[('*','*')]
@@ -314,8 +317,11 @@ class socket:
 				self.encrypt = False
 			# find private key using client's own address
 			host, port = self.c_addr
-			if ((host, str(port)) in privateKeys):
-				self.privatekey = privateKeys[(host, str(port))]
+			tuple = syssock.gethostbyaddr(host)
+			for i in tuple:
+				if ((i, str(port)) in privateKeys):
+					self.privatekey = privateKeys[(i, str(port))]
+					break
 			# if no keys for the specific address, use wildcard private key
 			elif (('*','*') in privateKeys):
 				self.privatekey = privateKeys[('*','*')]
@@ -378,9 +384,12 @@ class socket:
 		## find public/private keys
 		if(self.encrypt == True):
 			# find public key using client's address
-			host, port = self.c_addr			
-			if ((host, str(port)) in publicKeys):
-				self.publickey = publicKeys[(host, str(port))]
+			host, port = self.c_addr
+			tuple = syssock.gethostbyaddr(host)
+			for i in tuple:
+				if ((i, str(port)) in publicKeys):
+					self.publickey = publicKeys[(i, str(port))]
+					break
 			# if no keys for the specific address, use wildcard public key
 			elif (('*','*') in publicKeys):
 				self.publickey = publicKeys[('*','*')]
@@ -390,8 +399,11 @@ class socket:
 				self.encrypt = False
 			# find private key using server's own address
 			host, port = self.s_addr
-			if ((host, str(port)) in privateKeys):
-				self.privatekey = privateKeys[(host, str(port))]
+			tuple = syssock.gethostbyaddr(host)
+			for i in tuple:
+				if ((i, str(port)) in privateKeys):
+					self.privatekey = privateKeys[(i, str(port))]
+					break
 			# if no keys for the specific address, use wildcard private key
 			elif (('*','*') in privateKeys):
 				self.privatekey = privateKeys[('*','*')]
