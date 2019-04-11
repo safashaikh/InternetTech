@@ -304,31 +304,37 @@ class socket:
 			# find public key using server's address
 			host, port = self.s_addr
 			tuple = syssock.gethostbyaddr(host)
+			found = False
 			for i in tuple:
 				if ((i, str(port)) in publicKeys):
 					self.publickey = publicKeys[(i, str(port))]
+					found = True
 					break
 			# if no keys for the specific address, use wildcard public key
-			elif (('*','*') in publicKeys):
-				self.publickey = publicKeys[('*','*')]
-			# no suitable key found, continue w/o encryption
-			else:
-				print("Error: No public key found with port and host or wildcard, continue without encryption")
+			if (found == False):
+				if ('*','*') in publicKeys:
+					self.publickey = publicKeys[('*','*')]
+				# no suitable key found, continue w/o encryption
+				else:
+					print("Error: No public key found with port and host or wildcard, continue without encryption")
 				self.encrypt = False
 			# find private key using client's own address
 			host, port = self.c_addr
 			tuple = syssock.gethostbyaddr(host)
+			found = False
 			for i in tuple:
 				if ((i, str(port)) in privateKeys):
 					self.privatekey = privateKeys[(i, str(port))]
+					found = True
 					break
 			# if no keys for the specific address, use wildcard private key
-			elif (('*','*') in privateKeys):
-				self.privatekey = privateKeys[('*','*')]
-			# no suitable key found, continue w/o encryption
-			else:
-				print("Error: No private key found with port and host or wildcard, continue without encryption")
-				self.encrypt = False
+			if (found == False):
+				if (('*','*') in privateKeys):
+					self.privatekey = privateKeys[('*','*')]
+				# no suitable key found, continue w/o encryption
+				else:
+					print("Error: No private key found with port and host or wildcard, continue without encryption")
+					self.encrypt = False
 				
 		## if both keys are successfully found, create nonce and box object
 		## only client needs to do nonce since client is the one encrypting
@@ -388,31 +394,37 @@ class socket:
 			# find public key using client's address
 			host, port = self.c_addr
 			tuple = syssock.gethostbyaddr(host)
+			found = False
 			for i in tuple:
 				if ((i, str(port)) in publicKeys):
 					self.publickey = publicKeys[(i, str(port))]
+					found = True
 					break
-			# if no keys for the specific address, use wildcard public key
-			elif (('*','*') in publicKeys):
-				self.publickey = publicKeys[('*','*')]
-			# no suitable key found, continue w/o encryption
-			else:
-				print("Error: No public key found with port and host or wildcard, continue without encryption")
-				self.encrypt = False
+			if(found == False):
+				# if no keys for the specific address, use wildcard public key
+				if (('*','*') in publicKeys):
+					self.publickey = publicKeys[('*','*')]
+				# no suitable key found, continue w/o encryption
+				else:
+					print("Error: No public key found with port and host or wildcard, continue without encryption")
+					self.encrypt = False
 			# find private key using server's own address
 			host, port = self.s_addr
 			tuple = syssock.gethostbyaddr(host)
+			found = False
 			for i in tuple:
 				if ((i, str(port)) in privateKeys):
 					self.privatekey = privateKeys[(i, str(port))]
+					found = True
 					break
-			# if no keys for the specific address, use wildcard private key
-			elif (('*','*') in privateKeys):
-				self.privatekey = privateKeys[('*','*')]
-			# no suitable key found, continue w/o encryption
-			else:
-				print("Error: No private key found with port and host or wildcard, continue without encryption")
-				self.encrypt = False
+			if(found==False):
+				# if no keys for the specific address, use wildcard private key
+				if (('*','*') in privateKeys):
+					self.privatekey = privateKeys[('*','*')]
+				# no suitable key found, continue w/o encryption
+				else:
+					print("Error: No private key found with port and host or wildcard, continue without encryption")
+					self.encrypt = False
 				
 		## if both keys are successfully found, create box object
 		print("Public key: " + str(self.publickey))
