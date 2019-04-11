@@ -258,7 +258,7 @@ class socket:
 				
 		## client calls connect, so c_addr is local and port is sock352portRx
 		## s_addr is hostname and sock352portTx
-		self.c_addr = ('', sock352portRx)
+		self.c_addr = ('localhost', sock352portRx)
 		self.s_addr = (servhost, sock352portTx)
 		## this is client
 		self.isserver = False
@@ -303,11 +303,12 @@ class socket:
 		if(self.encrypt == True):
 			# find public key using server's address
 			host, port = self.s_addr
-			tuple = syssock.gethostbyaddr(host)
+			tuple = syssock.gethostbyname_ex(host)
+			print("Tuple: "+str(tuple))
 			found = False
-			for i in tuple:
-				if ((i, str(port)) in publicKeys):
-					self.publickey = publicKeys[(i, str(port))]
+			for i in range(len(tuple)):
+				if ((str(tuple[i]), str(port)) in publicKeys):
+					self.publickey = publicKeys[(str(tuple[i]), str(port))]
 					found = True
 					break
 			# if no keys for the specific address, use wildcard public key
@@ -317,14 +318,15 @@ class socket:
 				# no suitable key found, continue w/o encryption
 				else:
 					print("Error: No public key found with port and host or wildcard, continue without encryption")
-				self.encrypt = False
+					self.encrypt = False
 			# find private key using client's own address
 			host, port = self.c_addr
-			tuple = syssock.gethostbyaddr(host)
+			print("host: "+str(host))
+			tuple = syssock.gethostbyname_ex(host)
 			found = False
-			for i in tuple:
-				if ((i, str(port)) in privateKeys):
-					self.privatekey = privateKeys[(i, str(port))]
+			for i in range(len(tuple)):
+				if ((str(tuple[i]), str(port)) in privateKeys):
+					self.privatekey = privateKeys[(str(tuple[i]), str(port))]
 					found = True
 					break
 			# if no keys for the specific address, use wildcard private key
@@ -393,11 +395,13 @@ class socket:
 		if(self.encrypt == True):
 			# find public key using client's address
 			host, port = self.c_addr
+			print("c_host: "+host)
 			tuple = syssock.gethostbyaddr(host)
+			print("tuple: "+str(tuple))
 			found = False
-			for i in tuple:
-				if ((i, str(port)) in publicKeys):
-					self.publickey = publicKeys[(i, str(port))]
+			for i in range(len(tuple)):
+				if ((str(tuple[i]), str(port)) in publicKeys):
+					self.publickey = publicKeys[(str(tuple[i]), str(port))]
 					found = True
 					break
 			if(found == False):
@@ -410,11 +414,14 @@ class socket:
 					self.encrypt = False
 			# find private key using server's own address
 			host, port = self.s_addr
-			tuple = syssock.gethostbyaddr(host)
+			print("host: "+str(host))
+			if(host==''):
+				host = 'localhost'
+			tuple = syssock.gethostbyname_ex(host)
 			found = False
-			for i in tuple:
-				if ((i, str(port)) in privateKeys):
-					self.privatekey = privateKeys[(i, str(port))]
+			for i in range(len(tuple)):
+				if ((str(tuple[i]), str(port)) in privateKeys):
+					self.privatekey = privateKeys[(str(tuple[i]), str(port))]
 					found = True
 					break
 			if(found==False):
