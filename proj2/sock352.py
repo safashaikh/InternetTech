@@ -238,6 +238,8 @@ class socket:
 		#print("This is my host: " + str(myhost))
 		## server binds to its sock352portRx
 		self.s_addr = (myhost, sock352portRx)
+		print("S_addr is ")
+		print(''+str(self.s_addr))
 		## sets server sock flag
 		self.isserver = True
 		self.sock.bind(self.s_addr)
@@ -303,14 +305,30 @@ class socket:
 		if(self.encrypt == True):
 			# find public key using server's address
 			host, port = self.s_addr
-			tuple = syssock.gethostbyname_ex(host)
-			print("Tuple: "+str(tuple))
+			port_str = str(port)
+			hostname, aliaslist, iplist = syssock.gethostbyname_ex(host)
+			print("server hostname is: "+str(hostname))
+			print("server aliaslist is: "+str(aliaslist))
+			print("server ip list is: "+str(iplist))
 			found = False
-			for i in range(len(tuple)):
-				if ((str(tuple[i]), str(port)) in publicKeys):
-					self.publickey = publicKeys[(str(tuple[i]), str(port))]
-					found = True
-					break
+			if (hostname,port_str) in publicKeys:
+				self.publickey = publicKeys[(hostname, port_str)]
+				found = True
+				print("***key found as: "+hostname)
+			if (found == False):
+				for i in range(len(aliaslist)):
+					if (aliaslist[i],port_str) in publicKeys:
+						self.publickey = publicKeys[(aliaslist[i], port_str)]
+						found = True
+						print("***key found as: "+aliaslist[i])
+						break
+			if (found == False):
+				for i in range(len(iplist)):
+					if (iplist[i],port_str) in publicKeys:
+						self.publickey = publicKeys[(iplist[i], port_str)]
+						found = True
+						print("***key found as: "+iplist[i])
+						break
 			# if no keys for the specific address, use wildcard public key
 			if (found == False):
 				if ('*','*') in publicKeys:
@@ -319,23 +337,50 @@ class socket:
 				else:
 					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
-			# find private key using client's own address
-			host, port = self.c_addr
-			print("host: "+str(host))
-			tuple = syssock.gethostbyname_ex(host)
+			
+			
+			'''
 			found = False
 			for i in range(len(tuple)):
-				if ((str(tuple[i]), str(port)) in privateKeys):
-					self.privatekey = privateKeys[(str(tuple[i]), str(port))]
+				if ((tuple[i], str(port)) in publicKeys):
+					self.publickey = publicKeys[(tuple[i], str(port))]
 					found = True
-					break
-			# if no keys for the specific address, use wildcard private key
+					print("***key found as: "+tuple[i])
+					break'''
+			
+			# find private key using client's own address
+			host, port = self.c_addr
+			port_str = str(port)
+			hostname, aliaslist, iplist = syssock.gethostbyname_ex(host)
+			print("client hostname is: "+str(hostname))
+			print("client aliaslist is: "+str(aliaslist))
+			print("client ip list is: "+str(iplist))
+			found = False
+			if (hostname,port_str) in privateKeys:
+				self.privatekey = privateKeys[(hostname, port_str)]
+				found = True
+				print("***key found as: "+hostname)
 			if (found == False):
-				if (('*','*') in privateKeys):
+				for i in range(len(aliaslist)):
+					if (aliaslist[i],port_str) in privateKeys:
+						self.privatekey = privateKeys[(aliaslist[i], port_str)]
+						found = True
+						print("***key found as: "+aliaslist[i])
+						break
+			if (found == False):
+				for i in range(len(iplist)):
+					if (iplist[i],port_str) in privateKeys:
+						self.privatekey = privateKeys[(iplist[i], port_str)]
+						found = True
+						print("***key found as: "+iplist[i])
+						break
+			# if no keys for the specific address, use wildcard key
+			if (found == False):
+				if ('*','*') in privateKeys:
 					self.privatekey = privateKeys[('*','*')]
 				# no suitable key found, continue w/o encryption
 				else:
-					print("Error: No private key found with port and host or wildcard, continue without encryption")
+					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
 				
 		## if both keys are successfully found, create nonce and box object
@@ -395,42 +440,73 @@ class socket:
 		if(self.encrypt == True):
 			# find public key using client's address
 			host, port = self.c_addr
-			print("c_host: "+host)
-			tuple = syssock.gethostbyaddr(host)
-			print("tuple: "+str(tuple))
+			port_str = str(port)
+			hostname, aliaslist, iplist = syssock.gethostbyaddr(host)
+			print(syssock.gethostname())
+			print("client hostname is: "+str(hostname))
+			print("client aliaslist is: "+str(aliaslist))
+			print("client ip list is: "+str(iplist))
 			found = False
-			for i in range(len(tuple)):
-				if ((str(tuple[i]), str(port)) in publicKeys):
-					self.publickey = publicKeys[(str(tuple[i]), str(port))]
-					found = True
-					break
-			if(found == False):
-				# if no keys for the specific address, use wildcard public key
-				if (('*','*') in publicKeys):
+			if (hostname,port_str) in publicKeys:
+				self.publickey = publicKeys[(hostname, port_str)]
+				found = True
+				print("***key found as: "+hostname)
+			if (found == False):
+				for i in range(len(aliaslist)):
+					if (aliaslist[i],port_str) in publicKeys:
+						self.publickey = publicKeys[(aliaslist[i], port_str)]
+						found = True
+						print("***key found as: "+aliaslist[i])
+						break
+			if (found == False):
+				for i in range(len(iplist)):
+					if (iplist[i],port_str) in publicKeys:
+						self.publickey = publicKeys[(iplist[i], port_str)]
+						found = True
+						print("***key found as: "+iplist[i])
+						break
+			# if no keys for the specific address, use wildcard public key
+			if (found == False):
+				if ('*','*') in publicKeys:
 					self.publickey = publicKeys[('*','*')]
 				# no suitable key found, continue w/o encryption
 				else:
 					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
+					
 			# find private key using server's own address
 			host, port = self.s_addr
-			print("host: "+str(host))
-			if(host==''):
-				host = 'localhost'
-			tuple = syssock.gethostbyname_ex(host)
+			port_str = str(port)
+			hostname, aliaslist, iplist = syssock.gethostbyname_ex('localhost')
+			print("server hostname is: "+str(hostname))
+			print("server aliaslist is: "+str(aliaslist))
+			print("server ip list is: "+str(iplist))
 			found = False
-			for i in range(len(tuple)):
-				if ((str(tuple[i]), str(port)) in privateKeys):
-					self.privatekey = privateKeys[(str(tuple[i]), str(port))]
-					found = True
-					break
-			if(found==False):
-				# if no keys for the specific address, use wildcard private key
-				if (('*','*') in privateKeys):
+			if (hostname,port_str) in privateKeys:
+				self.privatekey = privateKeys[(hostname, port_str)]
+				found = True
+				print("***key found as: "+hostname)
+			if (found == False):
+				for i in range(len(aliaslist)):
+					if (aliaslist[i],port_str) in privateKeys:
+						self.privatekey = privateKeys[(aliaslist[i], port_str)]
+						found = True
+						print("***key found as: "+aliaslist[i])
+						break
+			if (found == False):
+				for i in range(len(iplist)):
+					if (iplist[i],port_str) in privateKeys:
+						self.privatekey = privateKeys[(iplist[i], port_str)]
+						found = True
+						print("***key found as: "+iplist[i])
+						break
+			# if no keys for the specific address, use wildcard key
+			if (found == False):
+				if ('*','*') in privateKeys:
 					self.privatekey = privateKeys[('*','*')]
 				# no suitable key found, continue w/o encryption
 				else:
-					print("Error: No private key found with port and host or wildcard, continue without encryption")
+					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
 				
 		## if both keys are successfully found, create box object
