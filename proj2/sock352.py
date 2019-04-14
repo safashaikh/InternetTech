@@ -179,7 +179,6 @@ def init(UDPportTx,UDPportRx):
     # create the sockets to send and receive UDP packets on 
     # if the ports are not equal, create two sockets, one for Tx and one for Rx
 
-    
 # read the keyfile. The result should be a private key and a keychain of
 # public keys
 def readKeyChain(filename):
@@ -223,6 +222,7 @@ class socket:
 		self.isserver = None
 		self.udpPkt_hdr_data = struct.Struct('!BBBBHHLLQQLL')
 		self.sock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+		self.sock.setsockopt(syssock.SOL_SOCKET, syssock.SO_REUSEADDR, 1)
 		#self.sock = mysocket()
 		#self.sock.settimeout(10)
 		self.connected = False
@@ -265,7 +265,8 @@ class socket:
 		## this is client
 		self.isserver = False
 		## bind to sock352portRx
-		self.sock.bind(self.c_addr)
+		## bind to '' instead of localhost to receive over network
+		self.sock.bind(('',sock352portRx))
 			
 		## initiate handshake
 		P = Packet()
@@ -307,6 +308,10 @@ class socket:
 			host, port = self.s_addr
 			port_str = str(port)
 			hostname, aliaslist, iplist = syssock.gethostbyname_ex(host)
+			myhost = syssock.gethostname()
+			if myhost == hostname:
+				aliaslist.append('localhost')
+				iplist.append('127.0.0.1')
 			print("server hostname is: "+str(hostname))
 			print("server aliaslist is: "+str(aliaslist))
 			print("server ip list is: "+str(iplist))
@@ -352,9 +357,12 @@ class socket:
 			host, port = self.c_addr
 			port_str = str(port)
 			hostname, aliaslist, iplist = syssock.gethostbyname_ex(host)
-			print("client hostname is: "+str(hostname))
-			print("client aliaslist is: "+str(aliaslist))
-			print("client ip list is: "+str(iplist))
+			myhost = syssock.gethostname()
+			aliaslist.append(myhost)
+			iplist.append(syssock.gethostbyname(myhost))
+			print "client hostname is: ", hostname 
+			print "client aliaslist is: ",aliaslist
+			print "client ip list is: ", iplist
 			found = False
 			if (hostname,port_str) in privateKeys:
 				self.privatekey = privateKeys[(hostname, port_str)]
@@ -440,9 +448,17 @@ class socket:
 		if(self.encrypt == True):
 			# find public key using client's address
 			host, port = self.c_addr
+			print "client host is",host
 			port_str = str(port)
 			hostname, aliaslist, iplist = syssock.gethostbyaddr(host)
-			print(syssock.gethostname())
+			myhost = syssock.gethostname()
+			if host == '127.0.0.1':
+				aliaslist.append(myhost)
+				iplist.append(syssock.gethostbyname(myhost))
+				
+			if myhost == hostname:
+				aliaslist.append('localhost')
+				iplist.append('127.0.0.1')
 			print("client hostname is: "+str(hostname))
 			print("client aliaslist is: "+str(aliaslist))
 			print("client ip list is: "+str(iplist))
@@ -478,6 +494,9 @@ class socket:
 			host, port = self.s_addr
 			port_str = str(port)
 			hostname, aliaslist, iplist = syssock.gethostbyname_ex('localhost')
+			myhost = syssock.gethostname()
+			aliaslist.append(myhost)
+			iplist.append(syssock.gethostbyname(myhost))
 			print("server hostname is: "+str(hostname))
 			print("server aliaslist is: "+str(aliaslist))
 			print("server ip list is: "+str(iplist))
