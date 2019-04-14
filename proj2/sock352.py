@@ -209,8 +209,8 @@ def readKeyChain(filename):
 			print ( "error: opening keychain file: %s %s" % (filename,repr(e)))
 	else:
 			print ("error: No filename presented")             
-	print("The public keys are: " + str(publicKeys.keys()))
-	print("The private keys are: " + str(privateKeys.keys()))
+	#print("The public keys are: " + str(publicKeys.keys()))
+	#print("The private keys are: " + str(privateKeys.keys()))
 	return (publicKeys,privateKeys)
 
 class socket:
@@ -238,8 +238,6 @@ class socket:
 		#print("This is my host: " + str(myhost))
 		## server binds to its sock352portRx
 		self.s_addr = (myhost, sock352portRx)
-		print("S_addr is ")
-		print(''+str(self.s_addr))
 		## sets server sock flag
 		self.isserver = True
 		self.sock.bind(self.s_addr)
@@ -304,22 +302,26 @@ class socket:
 		
 		## find public/private keys
 		if(self.encrypt == True):
-			# find public key using server's address
+			######### find public key using server's address #######
 			host, port = self.s_addr
 			port_str = str(port)
+			
+			## return aliases and IP addresses of server
 			hostname, aliaslist, iplist = syssock.gethostbyname_ex(host)
 			myhost = syssock.gethostname()
+			
+			## if server hostname is same as localhost, add localhost to list
 			if myhost == hostname:
 				aliaslist.append('localhost')
 				iplist.append('127.0.0.1')
-			print("server hostname is: "+str(hostname))
-			print("server aliaslist is: "+str(aliaslist))
-			print("server ip list is: "+str(iplist))
 			found = False
+			
+			## check public keys for hostname
 			if (hostname,port_str) in publicKeys:
 				self.publickey = publicKeys[(hostname, port_str)]
 				found = True
-				print("***key found as: "+hostname)
+			
+			## check public keys for aliases
 			if (found == False):
 				for i in range(len(aliaslist)):
 					if (aliaslist[i],port_str) in publicKeys:
@@ -327,6 +329,8 @@ class socket:
 						found = True
 						print("***key found as: "+aliaslist[i])
 						break
+			
+			## check public keys for valid IPs
 			if (found == False):
 				for i in range(len(iplist)):
 					if (iplist[i],port_str) in publicKeys:
@@ -334,67 +338,61 @@ class socket:
 						found = True
 						print("***key found as: "+iplist[i])
 						break
-			# if no keys for the specific address, use wildcard public key
+			
+			## if no keys for the specific address, use wildcard public key
 			if (found == False):
 				if ('*','*') in publicKeys:
 					self.publickey = publicKeys[('*','*')]
-				# no suitable key found, continue w/o encryption
+				## no suitable key found
 				else:
-					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
+					raise Exception('No valid server public key found, cannot encrypt!')
 			
-			
-			'''
-			found = False
-			for i in range(len(tuple)):
-				if ((tuple[i], str(port)) in publicKeys):
-					self.publickey = publicKeys[(tuple[i], str(port))]
-					found = True
-					print("***key found as: "+tuple[i])
-					break'''
-			
-			# find private key using client's own address
+			####### find private key using client's own address ########
 			host, port = self.c_addr
 			port_str = str(port)
+			
+			## return aliases and IP addresses of self/client
 			hostname, aliaslist, iplist = syssock.gethostbyname_ex(host)
+			
+			## assuming hostname is given as localhost, add global hostname and its IP
 			myhost = syssock.gethostname()
 			aliaslist.append(myhost)
 			iplist.append(syssock.gethostbyname(myhost))
-			print "client hostname is: ", hostname 
-			print "client aliaslist is: ",aliaslist
-			print "client ip list is: ", iplist
 			found = False
+			
+			## check private keys for hostname
 			if (hostname,port_str) in privateKeys:
 				self.privatekey = privateKeys[(hostname, port_str)]
 				found = True
-				print("***key found as: "+hostname)
+			
+			## check private keys for aliases
 			if (found == False):
 				for i in range(len(aliaslist)):
 					if (aliaslist[i],port_str) in privateKeys:
 						self.privatekey = privateKeys[(aliaslist[i], port_str)]
 						found = True
-						print("***key found as: "+aliaslist[i])
 						break
+			
+			## check private keys for valid IPs 
 			if (found == False):
 				for i in range(len(iplist)):
 					if (iplist[i],port_str) in privateKeys:
 						self.privatekey = privateKeys[(iplist[i], port_str)]
 						found = True
-						print("***key found as: "+iplist[i])
 						break
-			# if no keys for the specific address, use wildcard key
+			
+			## if no keys for the specific address, use wildcard key
 			if (found == False):
 				if ('*','*') in privateKeys:
 					self.privatekey = privateKeys[('*','*')]
-				# no suitable key found, continue w/o encryption
+				## no suitable key found
 				else:
-					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
+					raise Exception('No valid client private key found, cannot encrypt!')
 				
 		## if both keys are successfully found, create nonce and box object
 		## only client needs to do nonce since client is the one encrypting
-		print("Public key: " + str(self.publickey))
-		print("Private key: " + str(self.privatekey))
 		if (self.encrypt == True) and (self.publickey is not None) and (self.privatekey is not None):
 			self.nonce = nacl.utils.random(Box.NONCE_SIZE)
 			self.box = Box(self.privatekey, self.publickey)
@@ -411,27 +409,28 @@ class socket:
 		if (len(args) >= 1):
 			if (args[0] == ENCRYPT):
 				self.encrypt = True
-		# your code goes here 
+		
 		## create conn from server side 
 		P = Packet()
 		syn_buffer, clientaddr = self.sock.recvfrom(P.header_len) # wait for SYN segment
 		self.c_addr = clientaddr
 		header = self.udpPkt_hdr_data.unpack(syn_buffer)
+		
 		## Check SYN bit of packet
 		if(header[1]>>0 & 1):
 			#print ("SYN segment successfully received" )
-			## SYN bit success, send SYNACK segment
+			## SYN bit success, send SYNACK segment back to client
 			## header[8] = seq no
 			P.ack_no = header[8] + 1
 			P.flags = SOCK352_SYN + SOCK352_ACK
-			#print("Client seq no is: ", header[8])
 			P.sequence_no = random.randint(0xFFFFFFFF)
-			#print("SERVER OG seq no is: "+str(P.sequence_no))
 			SYNACK = P.pack_header()
 			self.sock.sendto(SYNACK, self.c_addr)
+			
 			## wait for ACK from client
 			syn_buffer = self.sock.recv(P.header_len)
 			header = self.udpPkt_hdr_data.unpack(syn_buffer)
+			
 			## Check SYN bit is 0 and ACK bit is 1
 			if(~(header[1]>>0 | 0)) and (header[1]>>2 & 1):
 				print("Connection established" )
@@ -440,40 +439,46 @@ class socket:
 				address = self.c_addr
 			# Else, error with final ACK
 			else:
-				print("Error: SYN ACK from client failed")
+				raise Exception("SYN ACK from client failed")
 		# Error, SYN bit not set to 1
 		else:
-			print ("Error: SYN Segment failed")	
+			raise Exception("SYN Segment failed, SYN bit not set to 1")	
+		
 		## find public/private keys
 		if(self.encrypt == True):
 			# find public key using client's address
 			host, port = self.c_addr
-			print "client host is",host
 			port_str = str(port)
+			
+			## return aliases and IP addresses of client
 			hostname, aliaslist, iplist = syssock.gethostbyaddr(host)
 			myhost = syssock.gethostname()
+			
+			## if host address is local, add alias and global ip
 			if host == '127.0.0.1':
 				aliaslist.append(myhost)
 				iplist.append(syssock.gethostbyname(myhost))
-				
+			
+			## if addr is global and global hostname is same as local, add localhost
 			if myhost == hostname:
 				aliaslist.append('localhost')
 				iplist.append('127.0.0.1')
-			print("client hostname is: "+str(hostname))
-			print("client aliaslist is: "+str(aliaslist))
-			print("client ip list is: "+str(iplist))
 			found = False
+			
+			## check public keys for hostname
 			if (hostname,port_str) in publicKeys:
 				self.publickey = publicKeys[(hostname, port_str)]
 				found = True
-				print("***key found as: "+hostname)
+			
+			## check public keys for aliases
 			if (found == False):
 				for i in range(len(aliaslist)):
 					if (aliaslist[i],port_str) in publicKeys:
 						self.publickey = publicKeys[(aliaslist[i], port_str)]
 						found = True
-						print("***key found as: "+aliaslist[i])
 						break
+			
+			## check public keys for valid IPs
 			if (found == False):
 				for i in range(len(iplist)):
 					if (iplist[i],port_str) in publicKeys:
@@ -481,57 +486,60 @@ class socket:
 						found = True
 						print("***key found as: "+iplist[i])
 						break
-			# if no keys for the specific address, use wildcard public key
+			
+			## if no keys for the specific address, use wildcard public key
 			if (found == False):
 				if ('*','*') in publicKeys:
 					self.publickey = publicKeys[('*','*')]
 				# no suitable key found, continue w/o encryption
 				else:
-					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
+					raise Exception('No valid client public key found, cannot decrypt!')
 					
-			# find private key using server's own address
+			######### find private key using server's own address #######
 			host, port = self.s_addr
 			port_str = str(port)
+			
+			## server is always localhost for self
 			hostname, aliaslist, iplist = syssock.gethostbyname_ex('localhost')
+			
+			## find global hostname, add it and its IP
 			myhost = syssock.gethostname()
 			aliaslist.append(myhost)
 			iplist.append(syssock.gethostbyname(myhost))
-			print("server hostname is: "+str(hostname))
-			print("server aliaslist is: "+str(aliaslist))
-			print("server ip list is: "+str(iplist))
 			found = False
+			
+			## check private keys for hostname
 			if (hostname,port_str) in privateKeys:
 				self.privatekey = privateKeys[(hostname, port_str)]
 				found = True
-				print("***key found as: "+hostname)
+				
+			## check private keys for aliases
 			if (found == False):
 				for i in range(len(aliaslist)):
 					if (aliaslist[i],port_str) in privateKeys:
 						self.privatekey = privateKeys[(aliaslist[i], port_str)]
 						found = True
-						print("***key found as: "+aliaslist[i])
 						break
+			
+			## check private keys for valid IPs
 			if (found == False):
 				for i in range(len(iplist)):
 					if (iplist[i],port_str) in privateKeys:
 						self.privatekey = privateKeys[(iplist[i], port_str)]
 						found = True
-						print("***key found as: "+iplist[i])
 						break
-			# if no keys for the specific address, use wildcard key
+			
+			## if no keys for the specific address, use wildcard key
 			if (found == False):
 				if ('*','*') in privateKeys:
 					self.privatekey = privateKeys[('*','*')]
 				# no suitable key found, continue w/o encryption
 				else:
-					print("Error: No public key found with port and host or wildcard, continue without encryption")
 					self.encrypt = False
+					raise Exception('No valid server private key found, cannot decrypt!')
 				
 		## if both keys are successfully found, create box object
-		print("Public key: " + str(self.publickey))
-		print("Private key: " + str(self.privatekey))
-		print("The client addr is: "+str(self.c_addr))
 		if (self.encrypt == True) and (self.publickey is not None) and (self.privatekey is not None):
 			self.box = Box(self.privatekey, self.publickey)
 		return (clientsocket,address)
@@ -539,12 +547,14 @@ class socket:
 	def close(self):   # fill in your code here 
 		# close conn if last packet recv, ELSE close vars
 		if(self.isserver==False):
+			
 			## Client inits handshake, sends FIN bit
 			P = Packet()
 			P.flags = SOCK352_FIN
 			CLIEND = P.pack_header()
 			#self.sock.sendto(CLIEND, self.s_addr)
 			sendack = False
+			
 			## Checks for ack or resends if timeout
 			while not sendack:
 				try:
@@ -554,6 +564,7 @@ class socket:
 				except syssock.timeout:
 					pass
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
+			
 			## Check that ACK bit is 1
 			if(header[1]>>2 & 1):
 				#print("Sever ACK received")
@@ -571,13 +582,14 @@ class socket:
 					print("Client connection has been terminated")
 					self.sock.close()
 				else:
-					print("Error: Server term failed")
+					raise Exception("Server termination failed")
 			else:
-				print("Error ACK: Connection termination failed")
+				raise Exception("ACK Error: Connection termination failed")
 		else:
 			## Server wait for FIN bit from client
 			end_buffer = self.sock.recv(40)
 			header = self.udpPkt_hdr_data.unpack(end_buffer)
+			
 			## Check that FIN bit is 1
 			if(header[1]>>1 & 1):
 				## Sends ACK to Client
@@ -606,9 +618,9 @@ class socket:
 					print("Server connection has been terminated")
 					self.sock.close()
 				else:
-					print("Error: Second Ack from Client Failed")
+					raise Exception("Second Ack from Client Failed")
 			else:
-				print("Error: Connection termination failed")
+				raise Exception("Connection termination failed")
 
 	# Receive thread
 
@@ -635,7 +647,7 @@ class socket:
 					send_timer.stop()
 					lock.release()
 			else:
-				print("Did not receive an ACK message")
+				print Exception("Did not receive an ACK message")
 
 	def send(self,buffer):
 		# must do go back N
@@ -645,21 +657,25 @@ class socket:
 		global base
 		global send_timer
 		global num_packets
+		
 		## first time send is called, we are simply sending file length
 		if firsttime:
 			self.sock.sendto(buffer, self.s_addr)
 			#print("sent filesize"+str(buffer))
 			firsttime = False
 			return len(buffer)
+		
 		## Now sending packets
 		if (firsttime == False):
 			#print("Size of buffer: "+str(len(buffer)))
+			
 			## Divide buffer into segments of 64000-40; we subtract 40 because of packet header
 			intnum = len(buffer) / (64000-40)
 			num = len(buffer) / float(64000-40)
 			if (self.encrypt == False):
 				segments = [buffer[i:i+(64000-40)] for i in range(0,len(buffer),64000-40)]
 			else:
+				## Divide buffer into segments of 64000-40-40; we subtract 40 bytes because of packet header and another 40 bytes for the encryption overhead
 				segments = [buffer[i:i+(64000-80)] for i in range(0,len(buffer),64000-80)]
 			
 			## Create individual packets from those segments
@@ -697,6 +713,7 @@ class socket:
 					if (self.encrypt == False):
 						bytessent += len(segments[next_to_send])
  					else:
+						## Subtract the encryption bytes of each segment from the runnning count
 						bytessent += len(segments[next_to_send])-40
 					next_to_send += 1
 				## Start the timer
@@ -724,7 +741,7 @@ class socket:
 			
 			## wait for last ack before closing
 			t2.join()
-			print("bytessent: "+str(bytessent))
+			#print("bytessent: "+str(bytessent))
 			return bytessent 
 
 	def recv(self,nbytes):
@@ -740,6 +757,7 @@ class socket:
 			#longPacker = struct.Struct("!L")
 			#filelen_int = longPacker.unpack(filelen)[0]
 			#print("Received filesize: "+str(filelen_int))
+			## now we have received the file size, every other call to receive will be receiving file segments
 			firsttime = False
 			return filelen
 		else:
@@ -753,39 +771,47 @@ class socket:
 				else:
 					header = self.udpPkt_hdr_data.unpack_from(packet)
 					#print(header)
-					# check if seq no is expected seq no
+					## check if seq no is expected seq no
 					if(header[8]==expectedpack):
 						#print("Expected = Recv Pack: "+str(expectedpack))
-						# if it is, send ack where ack no = seq_no+1 and ack bit=1
+						## if it is, send ack where ack no = seq_no+1 and ack bit=1
 						P = Packet()
 						P.flags = SOCK352_ACK
 						P.ack_no = header[8]+1
 						PACKACK = P.pack_header()
 						self.sock.sendto(PACKACK, self.c_addr)
+						
 						expectedpack = expectedpack + 1
-						# keep track of how many bytes are recv
+						
+						## keep track of how many bytes are recv
 						datasize = header[11] #len(packet)-40
 						bytesrecv += datasize
 						#print("Total Bytes Recv: "+str(bytesrecv))
 						#print("Datasize: "+str(datasize))
-						# unpack data and append to list
+						
+						## unpack data 
 						datafmt = '!'+str(datasize)+'s'
 						segdata = struct.unpack_from(datafmt, packet, 40)
 						mydata = segdata[0]
-						# decrypt if encryption flag is set and options header is 01
+						
+						## decrypt if encryption flag is set and options header is 01
 						if (self.encrypt == True) and (header[2]==0x1):
 							mydata = self.box.decrypt(segdata[0])
+						
+						## append data segment to file list
 						recvfile.append(mydata)
 					else:
 						#print("Expected Pack: " + str(expectedpack) + "Recv Pack: "+str(header[8]))
-						# if not, ignore packet and re-send last ack
+						
+						## if not, ignore packet and re-send last ack
 						if(expectedpack!=0):
 							P = Packet()
 							P.flags = SOCK352_ACK
 							P.ack_no = expectedpack 
 							PACKACK = P.pack_header()
 							self.sock.sendto(PACKACK, self.c_addr)
-			# convert list to string and send
+			
+			## convert file list to string and return
 			str_recvfile = ''.join(recvfile)
 			return str_recvfile
 
